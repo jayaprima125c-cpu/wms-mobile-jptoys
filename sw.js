@@ -1,5 +1,5 @@
-// Service Worker for WMS Mobile Scanner PWA
-const CACHE_NAME = 'wms-scanner-v3.0';
+// Service Worker for WMS Mobile Scanner PWA - Jaya Prima Toys
+const CACHE_NAME = 'wms-jptoys-v3.2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -20,7 +20,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Hanya fetch normal, abaikan modifikasi request agar browser selalu membuka halaman utama dengan aman
   if (event.request.method !== 'GET') {
     return;
   }

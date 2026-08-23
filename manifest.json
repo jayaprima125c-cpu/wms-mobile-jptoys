@@ -1,7 +1,7 @@
 {
-  "name": "WMS Mobile Scanner - JP Toys",
-  "short_name": "WMS Scanner",
-  "description": "Aplikasi Scanner Barcode Mobile Petugas WMS JP Toys",
+  "name": "WMS Jaya Prima Toys",
+  "short_name": "JP Toys WMS",
+  "description": "Aplikasi Scanner Barcode & Manajemen Pergudangan Jaya Prima Toys",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,10 +10,9 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
     },
     {
       "src": "/icon-192.png",
@@ -22,10 +21,15 @@
       "purpose": "any"
     },
     {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }

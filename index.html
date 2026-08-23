@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#020617">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="WMS Scanner">
+  <meta name="apple-mobile-web-app-title" content="WMS JP Toys">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   
-  <title>WMS Mobile Scanner - JP Toys</title>
+  <title>WMS Jaya Prima Toys - Mobile Scanner</title>
   
   <!-- Tailwind CSS CDN & DaisyUI CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -79,28 +80,36 @@
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
+    .logo-glow {
+      filter: drop-shadow(0 10px 25px rgba(56, 189, 248, 0.35));
+    }
   </style>
 </head>
 
 <body class="h-full flex flex-col justify-between overflow-hidden bg-slate-950 text-slate-100 max-w-md mx-auto relative shadow-2xl">
 
   <!-- ======================================================= -->
-  <!-- 1. LOGIN SCREEN OVERLAY                                 -->
+  <!-- 1. LOGIN SCREEN OVERLAY (HALAMAN DEPAN)                -->
   <!-- ======================================================= -->
-  <div id="view-login" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between p-6 max-w-md mx-auto transition-all duration-300">
-    <div class="flex-1 flex flex-col justify-center items-center text-center space-y-6">
+  <div id="view-login" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between p-6 max-w-md mx-auto transition-all duration-300 overflow-y-auto">
+    <div class="flex-1 flex flex-col justify-center items-center text-center space-y-5 my-auto">
       
-      <!-- Logo Branding -->
+      <!-- Official Logo Branding -->
       <div class="space-y-2 flex flex-col items-center">
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center shadow-xl shadow-indigo-500/30 border border-indigo-400/40 animate-pulse">
-          <span class="material-symbols-outlined text-white text-4xl">qr_code_scanner</span>
+        <div class="relative group">
+          <div class="absolute -inset-3 bg-gradient-to-tr from-sky-400 via-indigo-500 to-amber-400 rounded-full blur-xl opacity-60 animate-pulse"></div>
+          <div class="relative w-28 h-28 rounded-3xl bg-slate-900/90 p-2.5 border border-white/20 shadow-2xl flex items-center justify-center">
+            <img src="logo.png" alt="WMS Jaya Prima Toys" class="w-full h-full object-contain logo-glow transition transform hover:scale-105 duration-300">
+          </div>
         </div>
-        <h1 class="text-2xl font-black tracking-tight text-white mt-3">WMS JP TOYS</h1>
-        <p class="text-xs text-slate-400 font-medium">Portal Scanner Petugas Lapangan</p>
+        <div class="pt-2">
+          <h1 class="text-xl font-black tracking-tight text-white uppercase">WMS JAYA PRIMA TOYS</h1>
+          <p class="text-[11px] text-sky-400 font-semibold tracking-wide">Sistem Scanner & Pergudangan Modern</p>
+        </div>
       </div>
 
       <!-- Login Form Card -->
-      <div class="w-full glass-card p-5 rounded-3xl space-y-4 shadow-2xl">
+      <div class="w-full glass-card p-5 rounded-3xl space-y-4 shadow-2xl border-slate-800">
         
         <!-- Select Petugas -->
         <div class="text-left space-y-1.5">
@@ -144,16 +153,23 @@
         </button>
       </div>
 
-      <!-- Quick Server Status -->
-      <div class="flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer" onclick="openSettingsModal()">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-        <span id="login-api-status">API: Terhubung</span>
-        <span class="material-symbols-outlined text-[14px]">tune</span>
+      <!-- Quick Install App Button & Server Status -->
+      <div class="w-full space-y-2">
+        <button id="btn-install-pwa" onclick="triggerPwaInstall()" class="hidden btn btn-xs w-full bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl py-2 h-auto flex items-center justify-center gap-1.5 font-bold">
+          <img src="logo.png" class="w-4 h-4 object-contain">
+          <span>Tambahkan ke Layar Utama (Install App)</span>
+        </button>
+
+        <div class="flex items-center justify-center gap-2 text-[11px] text-slate-400 cursor-pointer" onclick="openSettingsModal()">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span id="login-api-status">API Database: Terhubung</span>
+          <span class="material-symbols-outlined text-[14px]">tune</span>
+        </div>
       </div>
     </div>
 
     <div class="text-center text-[10px] text-slate-600 py-2">
-      WMS Mobile Client v2.5 • JP Toys Omnichannel
+      WMS Mobile Client v3.2 • Jaya Prima Toys
     </div>
   </div>
 
@@ -162,16 +178,16 @@
   <!-- ======================================================= -->
   <header class="glass-card border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between z-30 shrink-0">
     <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30 text-white cursor-pointer" onclick="switchScannerMode('dashboard')">
-        <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+      <div class="w-9 h-9 rounded-xl bg-slate-900/90 p-1 border border-white/15 flex items-center justify-center shadow-md shadow-sky-600/20 cursor-pointer overflow-hidden" onclick="switchScannerMode('dashboard')">
+        <img src="logo.png" alt="WMS Logo" class="w-full h-full object-contain">
       </div>
       <div>
-        <div class="text-xs font-bold text-white flex items-center gap-1.5 leading-none">
+        <div class="text-xs font-black text-white flex items-center gap-1.5 leading-none">
           <span>JP TOYS WMS</span>
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
         </div>
         <div class="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-          <span class="material-symbols-outlined text-[12px] text-indigo-400">person</span>
+          <span class="material-symbols-outlined text-[12px] text-sky-400">person</span>
           <span id="label-petugas">Petugas</span>
         </div>
       </div>
@@ -235,12 +251,19 @@
       <!-- Animated Laser Line Overlay -->
       <div class="scan-laser pointer-events-none"></div>
 
-      <!-- Quick Camera Controls Floating Pill -->
-      <div class="absolute top-2 right-2 flex items-center gap-1 z-20">
-        <button id="btn-torch" onclick="toggleTorch()" class="btn btn-xs btn-circle bg-slate-950/80 border border-slate-700 text-slate-300 shadow">
+      <!-- Quick Camera & Zoom Controls Floating Pill -->
+      <div class="absolute top-2 right-2 flex items-center gap-1.5 z-20">
+        <!-- Quick Zoom Selector -->
+        <div class="flex items-center bg-slate-950/85 border border-slate-700/90 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
+          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow">1x</button>
+          <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
+          <button id="zoom-3x" onclick="setCameraZoom(3.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">3x</button>
+        </div>
+
+        <button id="btn-torch" onclick="toggleTorch()" title="Senter" class="btn btn-xs btn-circle bg-slate-950/85 border border-slate-700 text-slate-300 shadow">
           <span class="material-symbols-outlined text-[15px]">flashlight_on</span>
         </button>
-        <button onclick="switchCameraFacing()" class="btn btn-xs btn-circle bg-slate-950/80 border border-slate-700 text-slate-300 shadow">
+        <button onclick="switchCameraFacing()" title="Ganti Kamera" class="btn btn-xs btn-circle bg-slate-950/85 border border-slate-700 text-slate-300 shadow">
           <span class="material-symbols-outlined text-[15px]">flip_camera_ios</span>
         </button>
       </div>
@@ -786,7 +809,51 @@
       document.getElementById('dash-officer-name').innerText = name.split(' ')[0];
     }
 
-    // ================= CAMERA SCANNER ENGINE =================
+    // ================= CAMERA SCANNER ENGINE WITH AUTO & MANUAL ZOOM =================
+    let currentZoom = 1.0;
+    let cameraTrack = null;
+
+    function setCameraZoom(level) {
+      currentZoom = Number(level) || 1.0;
+      
+      // Update UI active zoom buttons
+      ['1x', '2x', '3x'].forEach(z => {
+        const btn = document.getElementById(`zoom-${z}`);
+        if (btn) {
+          if (z === `${Math.round(currentZoom)}x` || (currentZoom === 1 && z === '1x')) {
+            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow';
+          } else {
+            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-400 hover:text-white';
+          }
+        }
+      });
+
+      // 1. Hardware Optical/Digital Zoom via MediaStreamTrack Constraints (Android Chrome / iOS 17+)
+      if (cameraTrack && cameraTrack.getCapabilities) {
+        try {
+          const caps = cameraTrack.getCapabilities();
+          if (caps.zoom) {
+            const minZ = caps.zoom.min || 1;
+            const maxZ = caps.zoom.max || 10;
+            const targetZoom = Math.min(Math.max(currentZoom, minZ), maxZ);
+            cameraTrack.applyConstraints({
+              advanced: [{ zoom: targetZoom }]
+            }).catch(err => console.warn('Hardware zoom warning:', err));
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 2. High-Performance CSS Viewfinder Magnification (Universal Fallback for all devices)
+      const videoElem = document.querySelector('#reader video');
+      if (videoElem) {
+        videoElem.style.transform = `scale(${currentZoom})`;
+        videoElem.style.transformOrigin = 'center center';
+        videoElem.style.transition = 'transform 0.2s ease-out';
+      }
+    }
+    window.setCameraZoom = setCameraZoom;
+
     function startCameraScanner() {
       if (!cameraInitialized) {
         initHtml5Qrcode();
@@ -801,8 +868,13 @@
       }
 
       const config = {
-        fps: 15,
-        qrbox: { width: 230, height: 130 },
+        fps: 20,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          return {
+            width: Math.floor(viewfinderWidth * 0.88),
+            height: Math.floor(viewfinderHeight * 0.65)
+          };
+        },
         aspectRatio: 1.777778
       };
 
@@ -817,8 +889,19 @@
           const videoElem = document.querySelector('#reader video');
           if (videoElem && videoElem.srcObject) {
             const track = videoElem.srcObject.getVideoTracks()[0];
+            cameraTrack = track;
             const caps = track.getCapabilities ? track.getCapabilities() : {};
             if (caps.torch) torchTrack = track;
+
+            // Continuous Autofocus
+            if (caps.focusMode && caps.focusMode.includes('continuous')) {
+              track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+            }
+
+            // Auto-apply optimal 1.5x zoom if hardware zoom exists for effortless barcode reading
+            if (caps.zoom) {
+              setCameraZoom(currentZoom > 1 ? currentZoom : 1.5);
+            }
           }
         } catch (e) {}
       }).catch(err => {
@@ -1473,6 +1556,39 @@
         }
       }, 1000);
     }
+
+    // ================= PWA INSTALLATION CONTROLLER =================
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('btn-install-pwa');
+      if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    async function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          showToast('Terima kasih telah menginstall WMS Jaya Prima Toys!', 'success');
+        }
+        deferredPrompt = null;
+        const installBtn = document.getElementById('btn-install-pwa');
+        if (installBtn) installBtn.classList.add('hidden');
+      } else {
+        showToast('Untuk install: Ketuk menu browser (titik 3 atau Share) ➔ Pilih "Tambahkan ke Layar Utama"', 'info');
+      }
+    }
+    window.triggerPwaInstall = triggerPwaInstall;
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      const installBtn = document.getElementById('btn-install-pwa');
+      if (installBtn) installBtn.classList.add('hidden');
+      showToast('WMS Jaya Prima Toys berhasil dipasang di layar utama!', 'success');
+    });
 
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
