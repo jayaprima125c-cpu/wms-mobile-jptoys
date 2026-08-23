@@ -320,7 +320,38 @@
         </div>
       </div>
 
-      <!-- Quick KPI Stats -->
+      <!-- Order Status Summary (Semua Petugas) -->
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">STATUS PESANAN HARI INI</div>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="glass-card p-2.5 rounded-2xl border border-indigo-500/30 space-y-0.5 text-center">
+            <div class="text-[9px] font-bold text-indigo-400 uppercase">Pesanan Baru</div>
+            <div class="flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-indigo-400 text-sm">fiber_new</span>
+              <span id="dash-stat-new" class="text-lg font-black text-white">0</span>
+            </div>
+            <div class="text-[9px] text-slate-500">Belum diproses</div>
+          </div>
+          <div class="glass-card p-2.5 rounded-2xl border border-amber-500/30 space-y-0.5 text-center">
+            <div class="text-[9px] font-bold text-amber-400 uppercase">Dalam Proses</div>
+            <div class="flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-amber-400 text-sm">pending_actions</span>
+              <span id="dash-stat-process" class="text-lg font-black text-white">0</span>
+            </div>
+            <div class="text-[9px] text-slate-500">Picking / Packing</div>
+          </div>
+          <div class="glass-card p-2.5 rounded-2xl border border-emerald-500/30 space-y-0.5 text-center">
+            <div class="text-[9px] font-bold text-emerald-400 uppercase">Siap Kirim</div>
+            <div class="flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-emerald-400 text-sm">local_shipping</span>
+              <span id="dash-stat-ship" class="text-lg font-black text-white">0</span>
+            </div>
+            <div class="text-[9px] text-slate-500">Serahkan ke kurir</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick KPI Action Cards -->
       <div class="grid grid-cols-2 gap-2.5">
         <div onclick="switchScannerMode('picking')" class="glass-card p-3 rounded-2xl border border-slate-800/80 space-y-1 cursor-pointer hover:border-indigo-500/40 transition-all">
           <div class="flex items-center justify-between">
@@ -671,34 +702,94 @@
     let currentPickingBatchId = '';
     let currentPackingOrder = null;
 
-    // ================= AUDIO & HAPTIC SYNTHESIZER =================
+    // ================= AUDIO & HAPTIC SYNTHESIZER (COMPREHENSIVE WMS SOUND SYSTEM) =================
     function playBeep(type = 'success') {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        const audioCtx = new AudioContext();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        const ctx = new AudioContext();
 
-        if (type === 'success') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-          osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.06); // E6
-          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.12);
-          if (navigator.vibrate) navigator.vibrate(80);
-        } else if (type === 'error') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.25);
-          if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+        function tone(freq, dur, wave, vol, delay) {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = wave || 'sine';
+          o.frequency.setValueAtTime(freq, ctx.currentTime + (delay || 0));
+          g.gain.setValueAtTime(vol || 0.25, ctx.currentTime + (delay || 0));
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (delay || 0) + dur);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(ctx.currentTime + (delay || 0));
+          o.stop(ctx.currentTime + (delay || 0) + dur);
+        }
+
+        switch (type) {
+          case 'success': // Scan berhasil — bip naik pendek
+          case 'scan_success':
+            tone(880, 0.06, 'sine', 0.3, 0);
+            tone(1320, 0.08, 'sine', 0.25, 0.06);
+            if (navigator.vibrate) navigator.vibrate(80);
+            break;
+
+          case 'item_picked': // Item picking di-checklist — ding lembut
+            tone(1047, 0.12, 'sine', 0.2, 0);    // C6
+            tone(1319, 0.15, 'sine', 0.15, 0.08); // E6
+            if (navigator.vibrate) navigator.vibrate(50);
+            break;
+
+          case 'item_verified': // Item packing terverifikasi — chime ganda
+            tone(1175, 0.1, 'sine', 0.2, 0);     // D6
+            tone(1397, 0.1, 'sine', 0.18, 0.1);  // F6
+            tone(1760, 0.15, 'sine', 0.15, 0.2); // A6
+            if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+            break;
+
+          case 'batch_complete': // Batch picking selesai — fanfare 3 nada
+            tone(784, 0.12, 'sine', 0.3, 0);     // G5
+            tone(988, 0.12, 'sine', 0.28, 0.12);  // B5
+            tone(1319, 0.2, 'sine', 0.25, 0.24);  // E6
+            tone(1568, 0.3, 'sine', 0.2, 0.36);   // G6
+            if (navigator.vibrate) navigator.vibrate([80, 50, 80, 50, 150]);
+            break;
+
+          case 'packing_complete': // Paket selesai packing — fanfare + vibrate panjang
+            tone(659, 0.1, 'sine', 0.3, 0);      // E5
+            tone(784, 0.1, 'sine', 0.28, 0.1);   // G5
+            tone(988, 0.1, 'sine', 0.25, 0.2);   // B5
+            tone(1319, 0.25, 'sine', 0.22, 0.3);  // E6
+            if (navigator.vibrate) navigator.vibrate([60, 40, 60, 40, 200]);
+            break;
+
+          case 'transfer_done': // Transfer stok — swoosh
+            tone(440, 0.08, 'triangle', 0.2, 0);
+            tone(880, 0.12, 'triangle', 0.15, 0.06);
+            tone(1760, 0.08, 'triangle', 0.1, 0.12);
+            if (navigator.vibrate) navigator.vibrate(60);
+            break;
+
+          case 'opname_saved': // Opname disimpan — click konfirmasi
+            tone(1000, 0.05, 'square', 0.15, 0);
+            tone(1500, 0.08, 'sine', 0.12, 0.06);
+            if (navigator.vibrate) navigator.vibrate(40);
+            break;
+
+          case 'error': // Error / barcode tidak cocok
+            tone(220, 0.25, 'sawtooth', 0.35, 0);
+            if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+            break;
+
+          case 'warning': // Peringatan / input kosong
+            tone(440, 0.08, 'square', 0.2, 0);
+            tone(440, 0.08, 'square', 0.2, 0.12);
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            break;
+
+          case 'mode_switch': // Pindah tab/mode — tick ringan
+            tone(1200, 0.03, 'sine', 0.1, 0);
+            if (navigator.vibrate) navigator.vibrate(30);
+            break;
+
+          default: // Fallback
+            tone(880, 0.08, 'sine', 0.2, 0);
+            break;
         }
       } catch (e) {}
     }
@@ -888,11 +979,11 @@
       }
 
       const config = {
-        fps: 20,
+        fps: 15,
         qrbox: function(viewfinderWidth, viewfinderHeight) {
           return {
-            width: Math.floor(viewfinderWidth * 0.88),
-            height: Math.floor(viewfinderHeight * 0.65)
+            width: Math.floor(viewfinderWidth * 0.70),
+            height: Math.floor(viewfinderHeight * 0.50)
           };
         },
         aspectRatio: 1.777778
@@ -918,10 +1009,8 @@
               track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             }
 
-            // Auto-apply optimal 1.5x zoom if hardware zoom exists for effortless barcode reading
-            if (caps.zoom) {
-              setCameraZoom(currentZoom > 1 ? currentZoom : 1.5);
-            }
+            // START KAMERA DI ZOOM 1x (jarak normal, seperti buka kamera biasa)
+            setCameraZoom(1.0);
           }
         } catch (e) {}
       }).catch(err => {
@@ -956,16 +1045,37 @@
 
     let lastScannedCode = '';
     let lastScannedTime = 0;
+    let autoZoomTimer = null;
+    let scanAttemptCount = 0;
 
     function onBarcodeScanned(decodedText, decodedResult) {
       const now = Date.now();
       if (decodedText === lastScannedCode && (now - lastScannedTime) < 1300) return;
       lastScannedCode = decodedText;
       lastScannedTime = now;
+      scanAttemptCount = 0;
+
+      // Reset zoom ke 1x setelah scan berhasil (delay 1.5 detik agar user lihat hasil scan)
+      if (autoZoomTimer) clearTimeout(autoZoomTimer);
+      autoZoomTimer = setTimeout(() => {
+        if (currentZoom > 1) setCameraZoom(1.0);
+      }, 1500);
+
       handleBarcodeReceived(decodedText.trim());
     }
 
-    function onBarcodeScanError(err) {}
+    function onBarcodeScanError(err) {
+      // Auto-zoom: jika kamera sudah aktif tapi belum berhasil scan selama beberapa attempt,
+      // perlahan zoom ke 2x untuk membantu deteksi barcode kecil/jauh
+      scanAttemptCount++;
+      if (scanAttemptCount === 45 && currentZoom < 1.5) {
+        // Setelah ~3 detik (45 frames @ 15fps) tanpa scan berhasil, auto-zoom ke 1.5x
+        setCameraZoom(1.5);
+      } else if (scanAttemptCount === 90 && currentZoom < 2.0) {
+        // Setelah ~6 detik, zoom ke 2x
+        setCameraZoom(2.0);
+      }
+    }
 
     function handleManualScanSubmit() {
       const input = document.getElementById('manual-barcode-input');
@@ -996,8 +1106,13 @@
       try {
         const res = await runGasAsync('getDashboardStats');
         if (res && res.success && res.stats) {
-          document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending} Menunggu`;
-          document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending} Menunggu`;
+          // 3 Status Pesanan
+          document.getElementById('dash-stat-new').innerText = res.stats.newOrders || 0;
+          document.getElementById('dash-stat-process').innerText = res.stats.inProcess || 0;
+          document.getElementById('dash-stat-ship').innerText = res.stats.readyToShip || 0;
+          // Action cards
+          document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending || 0} Menunggu`;
+          document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending || 0} Menunggu`;
         }
       } catch (e) {}
     }
@@ -1010,6 +1125,8 @@
           pickingBatches = res.batches || [];
           pickingItems = res.items || [];
           if (pickingBatches.length > 0 && !currentPickingBatchId) {
+            currentPickingBatchId = pickingBatches[0].batchId;
+          } else if (pickingBatches.length > 0 && !pickingBatches.some(b => b.batchId === currentPickingBatchId)) {
             currentPickingBatchId = pickingBatches[0].batchId;
           }
           renderPickingView();
@@ -1026,19 +1143,20 @@
       if (activeBatch) {
         batchLabel.innerHTML = `<span class="material-symbols-outlined text-[14px]">folder</span> ${activeBatch.batchId} <span class="badge badge-xs bg-indigo-900 text-indigo-300 font-bold">${activeBatch.courier}</span>`;
       } else {
-        batchLabel.innerText = 'PILIH BATCH PICKING';
+        batchLabel.innerText = 'TIDAK ADA BATCH AKTIF';
       }
 
       const items = pickingItems.filter(it => it.batchId === currentPickingBatchId);
       const container = document.getElementById('picking-item-list');
       
-      if (items.length === 0) {
+      if (!activeBatch || items.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-8 text-slate-500 text-xs bg-slate-900/50 rounded-2xl border border-slate-800 p-4">
-            <span class="material-symbols-outlined text-4xl block mb-2 text-indigo-400">task_alt</span>
-            Semua item di batch ini telah selesai diambil.
+          <div class="text-center py-8 text-slate-500 text-xs bg-slate-900/50 rounded-2xl border border-slate-800 p-4 space-y-2">
+            <span class="material-symbols-outlined text-4xl block text-indigo-400">task_alt</span>
+            <div class="font-bold text-slate-300 text-sm">Semua Item di Batch Ini Selesai!</div>
+            <div class="text-[11px] text-slate-400">Klik "Selesaikan Picking Batch" di bawah untuk lanjut ke batch berikutnya.</div>
           </div>`;
-        updatePickingProgress(0, 0);
+        updatePickingProgress(items.filter(it => it.picked).length, items.length);
         return;
       }
 
@@ -1068,10 +1186,11 @@
             <div class="p-3 flex items-center justify-between ${it.picked ? 'bg-emerald-950/30' : ''}">
               <div class="space-y-0.5 flex-1 pr-2">
                 <div class="font-bold text-xs text-white leading-tight">${it.name}</div>
-                <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-400">
                   <span class="font-mono text-indigo-300 font-semibold">${it.sku}</span>
                   <span>•</span>
-                  <span>Var: ${it.variation}</span>
+                  <span>Var: ${it.variation || '-'}</span>
+                  ${it.picked && it.pickedAt ? `<span class="text-emerald-400 font-mono text-[10px] font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">⏱️ ${it.pickedAt}</span>` : ''}
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -1106,13 +1225,15 @@
 
       if (matched) {
         matched.picked = true;
-        playBeep('success');
-        showToast(`SKU ${matched.sku} terambil!`, 'success');
+        const now = new Date();
+        matched.pickedAt = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        playBeep('item_picked');
+        showToast(`✅ [${matched.pickedAt}] SKU ${matched.sku} terambil!`, 'success');
         renderPickingView();
       } else {
         if (clean.startsWith('BATCH-')) {
           currentPickingBatchId = clean;
-          playBeep('success');
+          playBeep('scan_success');
           showToast(`Berpindah ke ${clean}`, 'info');
           renderPickingView();
         } else {
@@ -1126,7 +1247,13 @@
       const it = pickingItems.find(x => x.id === id);
       if (it) {
         it.picked = !it.picked;
-        if (it.picked) playBeep('success');
+        if (it.picked) {
+          const now = new Date();
+          it.pickedAt = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          playBeep('item_picked');
+        } else {
+          delete it.pickedAt;
+        }
         renderPickingView();
       }
     }
@@ -1155,7 +1282,7 @@
       currentPickingBatchId = batchId;
       document.getElementById('modal-picking-batches').close();
       renderPickingView();
-      playBeep('success');
+      playBeep('scan_success');
       showToast(`Batch ${batchId} dipilih.`, 'info');
     }
 
@@ -1168,7 +1295,7 @@
         const res = await runGasAsync('getOrderForPacking', { keyword: clean });
         if (res.success && res.order) {
           currentPackingOrder = res.order;
-          playBeep('success');
+          playBeep('scan_success');
           renderPackingOrderView();
           showToast(`Pesanan ${currentPackingOrder.orderSn} termuat.`, 'success');
         } else {
@@ -1179,8 +1306,10 @@
         const item = currentPackingOrder.items.find(it => it.sku.toUpperCase() === clean && !it.verified);
         if (item) {
           item.verified = true;
-          playBeep('success');
-          showToast(`Item ${item.sku} terverifikasi!`, 'success');
+          const now = new Date();
+          item.verifiedAt = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          playBeep('item_verified');
+          showToast(`✅ [${item.verifiedAt}] Item ${item.sku} terverifikasi!`, 'success');
           renderPackingOrderView();
         } else {
           playBeep('error');
@@ -1223,9 +1352,12 @@
           <div class="space-y-2">
             ${o.items.map(it => `
               <div class="glass-card p-3 rounded-2xl flex items-center justify-between border ${it.verified ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'}">
-                <div class="space-y-0.5">
+                <div class="space-y-0.5 flex-1 pr-2">
                   <div class="font-bold text-xs text-white leading-tight">${it.name}</div>
-                  <div class="text-[11px] text-slate-400 font-mono">${it.sku} (Var: ${it.variation})</div>
+                  <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-400 font-mono">
+                    <span>${it.sku} (Var: ${it.variation || '-'})</span>
+                    ${it.verified && it.verifiedAt ? `<span class="text-emerald-400 text-[10px] font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">⏱️ ${it.verifiedAt}</span>` : ''}
+                  </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-bold font-mono ${it.verified ? 'text-emerald-400' : 'text-slate-300'}">x${it.qty}</span>
@@ -1393,11 +1525,11 @@
 
       if (!rakInput.value) {
         rakInput.value = clean;
-        playBeep('success');
+        playBeep('scan_success');
         showToast(`Rak Opname: ${clean}`, 'info');
       } else {
         skuInput.value = clean;
-        playBeep('success');
+        playBeep('scan_success');
         showToast(`SKU Opname: ${clean}`, 'success');
         document.getElementById('opname-qty-input').focus();
       }
@@ -1417,25 +1549,46 @@
         showToast('Menyimpan progres picking...', 'info');
         const res = await runGasAsync('submitPickingProgress', { batchId: currentPickingBatchId, items: items, petugas: currentPetugas });
         if (res.success) {
-          playBeep('success');
+          playBeep('batch_complete');
           showToast(res.message || 'Batch Picking Selesai!', 'success');
-          loadPickingData();
+          
+          // Auto-advance: hapus batch yang sudah selesai dan otomatis pilih batch berikutnya
+          const completedBatchId = currentPickingBatchId;
+          pickingBatches = pickingBatches.filter(b => b.batchId !== completedBatchId);
+          pickingItems = pickingItems.filter(it => it.batchId !== completedBatchId);
+
+          if (pickingBatches.length > 0) {
+            currentPickingBatchId = pickingBatches[0].batchId;
+            showToast(`⚡ Otomatis lanjut ke: ${currentPickingBatchId}`, 'info');
+            renderPickingView();
+          } else {
+            currentPickingBatchId = '';
+            renderPickingView();
+            // Refresh dari server untuk cek apakah ada batch baru yang baru di-generate
+            await loadPickingData();
+            if (pickingBatches.length === 0) {
+              showToast('🎉 Semua batch picking hari ini telah selesai!', 'success');
+            }
+          }
         } else {
+          playBeep('error');
           showToast(res.error || 'Gagal menyimpan picking.', 'error');
         }
       } else if (currentMode === 'packing') {
         if (!currentPackingOrder) {
+          playBeep('warning');
           showToast('Scan barcode resi terlebih dahulu.', 'warning');
           return;
         }
         showToast('Menyimpan packing...', 'info');
         const res = await runGasAsync('submitPackingVerification', { orderSn: currentPackingOrder.orderSn, petugas: currentPetugas, items: currentPackingOrder.items });
         if (res.success) {
-          playBeep('success');
+          playBeep('packing_complete');
           showToast(res.message || 'Paket Selesai Dipacking!', 'success');
           currentPackingOrder = null;
           renderPackingOrderView();
         } else {
+          playBeep('error');
           showToast(res.error || 'Gagal verifikasi packing.', 'error');
         }
       } else if (currentMode === 'transfer') {
@@ -1445,18 +1598,20 @@
         const qty = document.getElementById('transfer-qty-input').value;
 
         if (!src || !tgt || !sku) {
+          playBeep('warning');
           showToast('Isi Rak Asal, SKU, dan Rak Tujuan.', 'warning');
           return;
         }
         showToast('Memproses mutasi rak...', 'info');
         const res = await runGasAsync('submitStockTransfer', { sourceRak: src, targetRak: tgt, sku: sku, qty: qty, petugas: currentPetugas });
         if (res.success) {
-          playBeep('success');
+          playBeep('transfer_done');
           showToast(res.message || 'Transfer berhasil!', 'success');
           document.getElementById('transfer-source-rak').value = '';
           document.getElementById('transfer-target-rak').value = '';
           document.getElementById('transfer-sku-input').value = '';
         } else {
+          playBeep('error');
           showToast(res.error || 'Gagal transfer stok.', 'error');
         }
       } else if (currentMode === 'opname') {
@@ -1466,18 +1621,20 @@
         const notes = document.getElementById('opname-notes-input').value;
 
         if (!rak || !sku) {
+          playBeep('warning');
           showToast('Scan Barcode Rak dan SKU terlebih dahulu.', 'warning');
           return;
         }
         showToast('Menyimpan hasil opname...', 'info');
         const res = await runGasAsync('submitStockOpname', { rak: rak, sku: sku, qtyFisik: qtyFisik, qtySistem: 0, petugas: currentPetugas, notes: notes });
         if (res.success) {
-          playBeep('success');
+          playBeep('opname_saved');
           showToast(res.message || 'Opname berhasil disimpan!', 'success');
           document.getElementById('opname-sku-input').value = '';
           document.getElementById('opname-qty-input').value = '0';
           document.getElementById('opname-notes-input').value = '';
         } else {
+          playBeep('error');
           showToast(res.error || 'Gagal menyimpan opname.', 'error');
         }
       }
@@ -1485,6 +1642,9 @@
 
     // ================= MODE SWITCHER =================
     function switchScannerMode(mode) {
+      if (currentMode !== mode) {
+        playBeep('mode_switch');
+      }
       currentMode = mode;
       
       ['dashboard', 'picking', 'packing', 'transfer', 'posisi', 'opname'].forEach(m => {
