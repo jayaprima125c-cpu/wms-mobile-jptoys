@@ -1,18 +1,7 @@
 // Service Worker for WMS Mobile Scanner PWA
-const CACHE_NAME = 'wms-scanner-v2.5';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
-];
+const CACHE_NAME = 'wms-scanner-v3.0';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -26,29 +15,19 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Hanya tangani GET request statis lokal, abaikan Google Apps Script API POST calls
-  if (event.request.method !== 'GET' || event.request.url.includes('script.google.com')) {
+  // Hanya fetch normal, abaikan modifikasi request agar browser selalu membuka halaman utama dengan aman
+  if (event.request.method !== 'GET') {
     return;
   }
-
+  
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cache first, lalu fetch update di background
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(event.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
