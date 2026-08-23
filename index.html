@@ -322,7 +322,13 @@
 
       <!-- Order Status Summary (Semua Petugas) -->
       <div class="space-y-1.5">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">STATUS PESANAN HARI INI</div>
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">STATUS PESANAN HARI INI</span>
+          <button onclick="loadDashboardData(true)" class="btn btn-ghost btn-xs text-[10px] text-indigo-400 hover:text-indigo-300 gap-1 px-1.5 py-0.5 h-auto rounded-lg">
+            <span id="dash-refresh-icon" class="material-symbols-outlined text-[14px]">refresh</span>
+            <span id="dash-refresh-text">Segarkan</span>
+          </button>
+        </div>
         <div class="grid grid-cols-3 gap-2">
           <div class="glass-card p-2.5 rounded-2xl border border-indigo-500/30 space-y-0.5 text-center">
             <div class="text-[9px] font-bold text-indigo-400 uppercase">Pesanan Baru</div>
@@ -341,12 +347,12 @@
             <div class="text-[9px] text-slate-500">Picking / Packing</div>
           </div>
           <div class="glass-card p-2.5 rounded-2xl border border-emerald-500/30 space-y-0.5 text-center">
-            <div class="text-[9px] font-bold text-emerald-400 uppercase">Siap Kirim</div>
+            <div class="text-[9px] font-bold text-emerald-400 uppercase">Dikirim</div>
             <div class="flex items-center justify-center gap-1">
               <span class="material-symbols-outlined text-emerald-400 text-sm">local_shipping</span>
               <span id="dash-stat-ship" class="text-lg font-black text-white">0</span>
             </div>
-            <div class="text-[9px] text-slate-500">Serahkan ke kurir</div>
+            <div class="text-[9px] text-slate-500">Telah dikirim</div>
           </div>
         </div>
       </div>
@@ -685,7 +691,14 @@
       console.warn('Error parsing url params:', e);
     }
 
-    let gasApiUrl = localStorage.getItem(STORAGE_KEY_GAS_URL) || DEFAULT_GAS_URL;
+    // 2. Pembersihan Otomatis (Auto-Migration) jika localStorage masih menyimpan URL lama yang rusak/terpotong
+    let storedGasUrl = localStorage.getItem(STORAGE_KEY_GAS_URL);
+    if (!storedGasUrl || storedGasUrl.includes('AKfycbxAkcAsZCElkNKxeJZ2eiXDn6U7rL6bw-7wr3ktLMg') || storedGasUrl.length < 60) {
+      storedGasUrl = DEFAULT_GAS_URL;
+      localStorage.setItem(STORAGE_KEY_GAS_URL, DEFAULT_GAS_URL);
+    }
+
+    let gasApiUrl = storedGasUrl;
     let currentMode = 'dashboard'; // dashboard | picking | packing | transfer | posisi | opname
     let currentPetugas = localStorage.getItem('wms_mobile_petugas') || 'Budi (Gudang)';
     let isLoggedIn = localStorage.getItem('wms_mobile_logged_in') === 'true';
@@ -871,6 +884,7 @@
       if (isLoggedIn) {
         loginView.classList.add('hidden');
         setPetugas(currentPetugas);
+        renderCachedDashboardStats();
         loadDashboardData();
       } else {
         loginView.classList.remove('hidden');
@@ -1102,10 +1116,32 @@
     }
 
     // ================= CONTROLLER: DASHBOARD =================
-    async function loadDashboardData() {
+    // 1. Tampilkan data cache lokal terlebih dahulu (jika ada) agar tidak 0 saat awal buka
+    function renderCachedDashboardStats() {
+      try {
+        const cached = localStorage.getItem('wms_cached_dashboard_stats');
+        if (cached) {
+          const stats = JSON.parse(cached);
+          if (document.getElementById('dash-stat-new')) document.getElementById('dash-stat-new').innerText = stats.newOrders || 0;
+          if (document.getElementById('dash-stat-process')) document.getElementById('dash-stat-process').innerText = stats.inProcess || 0;
+          if (document.getElementById('dash-stat-ship')) document.getElementById('dash-stat-ship').innerText = stats.readyToShip || 0;
+          if (document.getElementById('dash-stat-picking')) document.getElementById('dash-stat-picking').innerText = `${stats.pickingPending || 0} Menunggu`;
+          if (document.getElementById('dash-stat-packing')) document.getElementById('dash-stat-packing').innerText = `${stats.packingPending || 0} Menunggu`;
+        }
+      } catch (e) {}
+    }
+
+    async function loadDashboardData(isManual = false) {
+      const refreshIcon = document.getElementById('dash-refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+      if (isManual) showToast('Menyinkronkan data pesanan dari server...', 'info');
+
       try {
         const res = await runGasAsync('getDashboardStats');
         if (res && res.success && res.stats) {
+          // Simpan ke cache lokal
+          localStorage.setItem('wms_cached_dashboard_stats', JSON.stringify(res.stats));
+          
           // 3 Status Pesanan
           document.getElementById('dash-stat-new').innerText = res.stats.newOrders || 0;
           document.getElementById('dash-stat-process').innerText = res.stats.inProcess || 0;
@@ -1113,8 +1149,21 @@
           // Action cards
           document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending || 0} Menunggu`;
           document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending || 0} Menunggu`;
+
+          if (isManual) {
+            playBeep('scan_success');
+            showToast('✅ Status pesanan berhasil diperbarui!', 'success');
+          }
+        } else if (isManual) {
+          playBeep('warning');
+          showToast(res.message || 'Gagal memuat status pesanan.', 'warning');
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('loadDashboardData error:', e);
+        if (isManual) showToast('Koneksi terputus ke database.', 'error');
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
     }
 
     // ================= CONTROLLER: PICKING =================
@@ -1780,6 +1829,13 @@
     document.addEventListener('DOMContentLoaded', () => {
       startClock();
       checkAuthStatus();
+
+      // Auto-refresh data dashboard berkala setiap 20 detik saat di tab Home
+      setInterval(() => {
+        if (isLoggedIn && currentMode === 'dashboard' && !document.hidden) {
+          loadDashboardData();
+        }
+      }, 20000);
     });
   </script>
 </body>
