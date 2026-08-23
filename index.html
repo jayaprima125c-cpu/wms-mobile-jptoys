@@ -615,8 +615,22 @@
   <script>
     // ================= GLOBAL STATE =================
     const STORAGE_KEY_GAS_URL = 'wms_gas_api_url';
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwqZ-wms-jptoys/exec";
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxAkcAsZCElkNKxeJZ2eiXDn6U7rL6bw-7wr3ktLMg/exec";
     
+    // 1. Auto-deteksi URL API dari parameter URL (?api=... atau ?gas=...)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const apiFromUrl = urlParams.get('api') || urlParams.get('gas');
+      if (apiFromUrl) {
+        const decodedUrl = decodeURIComponent(apiFromUrl).trim();
+        if (decodedUrl.startsWith('https://script.google.com/macros/s/')) {
+          localStorage.setItem(STORAGE_KEY_GAS_URL, decodedUrl);
+        }
+      }
+    } catch (e) {
+      console.warn('Error parsing url params:', e);
+    }
+
     let gasApiUrl = localStorage.getItem(STORAGE_KEY_GAS_URL) || DEFAULT_GAS_URL;
     let currentMode = 'dashboard'; // dashboard | picking | packing | transfer | posisi | opname
     let currentPetugas = localStorage.getItem('wms_mobile_petugas') || 'Budi (Gudang)';
@@ -683,93 +697,38 @@
       }, 3200);
     }
 
-    // ================= REST API CALLER (GAS & SIMULATION FALLBACK) =================
+    // ================= REST API CALLER (CONNECTED DIRECTLY TO REAL GAS DATABASE) =================
     async function runGasAsync(actionName, payloadData = {}) {
-      // 1. Try real fetch to Google Apps Script if URL is valid
-      if (gasApiUrl && gasApiUrl.startsWith('https://script.google.com/macros/s/')) {
-        try {
-          const response = await fetch(gasApiUrl, {
-            method: 'POST',
-            redirect: 'follow',
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify({
-              action: actionName,
-              data: payloadData
-            })
-          });
-          const json = await response.json();
-          return json;
-        } catch (fetchErr) {
-          console.warn(`[API GAS Fetch Error] Falling back to simulation for '${actionName}':`, fetchErr);
-        }
+      if (!gasApiUrl || !gasApiUrl.startsWith('https://script.google.com/macros/s/')) {
+        showToast('⚠️ Hubungkan URL API Apps Script di menu Pengaturan (⚙️)', 'warning');
+        openSettingsModal();
+        return { success: false, message: 'URL API Apps Script belum dikonfigurasi.' };
       }
 
-      // 2. Offline / Simulation Fallback (Ensures complete instant demonstration)
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          if (actionName === 'getDashboardStats') {
-            resolve({ success: true, stats: { pickingPending: 4, packingPending: 7, readyToShip: 28, totalProduk: 240 } });
-          } else if (actionName === 'getPickingBatches') {
-            resolve({
-              success: true,
-              batches: [
-                { batchId: 'BATCH-260823-01', courier: 'SPX Express', channel: 'Shopee', orderCount: 4, itemCount: 8 },
-                { batchId: 'BATCH-260823-02', courier: 'J&T Express', channel: 'TikTok Shop', orderCount: 3, itemCount: 5 }
-              ],
-              items: [
-                { id: '1', batchId: 'BATCH-260823-01', sku: 'TY-ROBOT-01', name: 'Robot Transformer Warrior', variation: 'Biru', qty: 2, rak: 'A-1-01', picked: false },
-                { id: '2', batchId: 'BATCH-260823-01', sku: 'TY-CAR-RC', name: 'Mobil Remot Monster Truck', variation: 'Merah', qty: 1, rak: 'A-1-03', picked: false },
-                { id: '3', batchId: 'BATCH-260823-01', sku: 'TY-DOLL-02', name: 'Boneka Edukasi Interaktif', variation: 'Pink', qty: 3, rak: 'B-2-01', picked: false },
-                { id: '4', batchId: 'BATCH-260823-01', sku: 'TY-LEGO-CITY', name: 'Balok Susun Kota Mini', variation: 'Standard', qty: 2, rak: 'B-2-04', picked: false }
-              ]
-            });
-          } else if (actionName === 'getOrderForPacking') {
-            const kw = payloadData.keyword || '';
-            resolve({
-              success: true,
-              order: {
-                orderSn: kw.startsWith('SPX') ? '260823ABC100' : (kw || '260823ABC100'),
-                resi: kw.startsWith('SPX') ? kw : 'SPXID098271829',
-                status: 'Sedang Packing',
-                channel: 'Shopee',
-                courier: 'SPX Standard',
-                recipient: 'Rudi Hartono (Jakarta Barat)',
-                items: [
-                  { sku: 'TY-ROBOT-01', name: 'Robot Transformer Warrior', variation: 'Biru', qty: 2, verified: false },
-                  { sku: 'TY-CAR-RC', name: 'Mobil Remot Monster Truck', variation: 'Merah', qty: 1, verified: false }
-                ]
-              }
-            });
-          } else if (actionName === 'getRakDetails') {
-            const rak = payloadData.rak || 'A-1-01';
-            resolve({
-              success: true,
-              rak: rak,
-              totalQty: 45,
-              totalSku: 3,
-              products: [
-                { sku: 'TY-ROBOT-01', name: 'Robot Transformer Warrior', variation: 'Biru', stock: 20, rak: rak },
-                { sku: 'TY-CAR-RC', name: 'Mobil Remot Monster Truck', variation: 'Merah', stock: 15, rak: rak },
-                { sku: 'TY-PLANE-01', name: 'Pesawat Tempur Supersonik', variation: 'Abu', stock: 10, rak: rak }
-              ]
-            });
-          } else if (actionName === 'getProductLocations') {
-            const kw = payloadData.sku || payloadData.keyword || 'ROBOT';
-            resolve({
-              success: true,
-              keyword: kw,
-              results: [
-                { sku: 'TY-ROBOT-01', name: 'Robot Transformer Warrior', variation: 'Biru', rak: 'A-1-01', stock: 20 },
-                { sku: 'TY-ROBOT-01', name: 'Robot Transformer Warrior', variation: 'Merah', rak: 'A-1-02', stock: 12 }
-              ]
-            });
-          } else {
-            resolve({ success: true, message: 'Operasi berhasil diproses sistem.' });
-          }
-        }, 300);
-      });
+      try {
+        const response = await fetch(gasApiUrl, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: actionName,
+            data: payloadData
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const json = await response.json();
+        return json;
+      } catch (fetchErr) {
+        console.error(`[API GAS Fetch Error] Action '${actionName}':`, fetchErr);
+        showToast(`Gagal terhubung ke Database: ${fetchErr.message}`, 'error');
+        return { success: false, error: fetchErr.toString(), message: 'Gagal terhubung ke server database Google Sheets.' };
+      }
     }
 
     // ================= AUTH / LOGIN CONTROLLER =================
@@ -1305,10 +1264,10 @@
           <div class="glass-card p-3 rounded-2xl space-y-1.5 border-slate-800">
             <div class="font-bold text-xs text-white">${r.name}</div>
             <div class="text-[11px] text-slate-400 font-mono">${r.sku} • Var: ${r.variation}</div>
-            <div class="flex items-center justify-between pt-1 border-t border-slate-800">
-              <span class="text-xs font-bold text-indigo-400 font-mono flex items-center gap-1">
-                <span class="material-symbols-outlined text-[15px]">shelves</span> ${r.rak}
-              </span>
+            <div class="flex items-center justify-between pt-1.5 border-t border-slate-800 flex-wrap gap-1">
+              <div class="flex flex-wrap gap-1 items-center">
+                ${String(r.rak || 'DEFAULT').split(/[,;\/]+/).map(k => k.trim()).filter(Boolean).map(k => `<span class="px-1.5 py-0.5 rounded-lg bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[11px] font-mono font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">shelves</span>${k.toLowerCase().startsWith('rak') ? k : 'Rak: ' + k}</span>`).join(' ')}
+              </div>
               <span class="badge badge-sm bg-emerald-950/60 border-emerald-500/30 text-emerald-300 font-mono font-bold">Stok: ${r.stock}</span>
             </div>
           </div>
