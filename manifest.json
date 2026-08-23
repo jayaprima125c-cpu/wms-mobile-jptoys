@@ -1,0 +1,18 @@
+{
+  "name": "WMS Mobile Scanner - JP Toys",
+  "short_name": "WMS Scanner",
+  "description": "Aplikasi Scanner Barcode Mobile Petugas WMS JP Toys (Picking, Packing, Transfer, Opname & Posisi Stok)",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
