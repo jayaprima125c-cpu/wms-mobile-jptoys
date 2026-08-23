@@ -728,6 +728,7 @@
         return { success: false, message: 'URL API Apps Script belum dikonfigurasi.' };
       }
 
+      // 1. Coba Method POST (Text/Plain CORS Simple Request)
       try {
         const response = await fetch(gasApiUrl, {
           method: 'POST',
@@ -741,17 +742,36 @@
           })
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
+        if (response.ok) {
+          const json = await response.json();
+          return json;
         }
-
-        const json = await response.json();
-        return json;
-      } catch (fetchErr) {
-        console.error(`[API GAS Fetch Error] Action '${actionName}':`, fetchErr);
-        showToast(`Gagal terhubung ke Database: ${fetchErr.message}`, 'error');
-        return { success: false, error: fetchErr.toString(), message: 'Gagal terhubung ke server database Google Sheets.' };
+      } catch (postErr) {
+        console.warn(`[POST fetch failed, trying GET fallback for '${actionName}']:`, postErr);
       }
+
+      // 2. Fallback Otomatis: Method GET (Universal CORS-safe untuk Mobile Browser)
+      try {
+        const queryParams = new URLSearchParams({
+          action: actionName,
+          data: JSON.stringify(payloadData),
+          _t: Date.now()
+        });
+        const getUrl = `${gasApiUrl}${gasApiUrl.includes('?') ? '&' : '?'}${queryParams.toString()}`;
+        const getRes = await fetch(getUrl, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        if (getRes.ok) {
+          const json = await getRes.json();
+          return json;
+        }
+      } catch (getErr) {
+        console.error(`[GET fallback error for '${actionName}']:`, getErr);
+      }
+
+      showToast(`Gagal terhubung ke Database. Pastikan Akses Web App diatur ke 'Anyone/Siapa Saja'`, 'error');
+      return { success: false, error: 'Failed to fetch', message: 'Gagal terhubung ke server database Google Sheets.' };
     }
 
     // ================= AUTH / LOGIN CONTROLLER =================
