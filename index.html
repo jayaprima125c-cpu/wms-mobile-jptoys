@@ -69,9 +69,10 @@
     }
     #reader video {
       border-radius: 1rem;
-      object-fit: cover;
+      object-fit: contain !important;
       width: 100% !important;
-      max-height: 190px !important;
+      max-height: 230px !important;
+      background: #020617;
     }
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -255,9 +256,10 @@
       <div class="absolute top-2 right-2 flex items-center gap-1.5 z-20">
         <!-- Quick Zoom Selector -->
         <div class="flex items-center bg-slate-950/85 border border-slate-700/90 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
-          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow">1x</button>
-          <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
-          <button id="zoom-3x" onclick="setCameraZoom(3.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">3x</button>
+          <button id="zoom-0.7x" onclick="setCameraZoom(0.7)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white" title="Jauh (Ultra Wide)">0.7x</button>
+          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow" title="Normal">1x</button>
+          <button id="zoom-1.5x" onclick="setCameraZoom(1.5)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">1.5x</button>
+          <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
         </div>
 
         <button id="btn-torch" onclick="toggleTorch()" title="Senter" class="btn btn-xs btn-circle bg-slate-950/85 border border-slate-700 text-slate-300 shadow">
@@ -665,6 +667,38 @@
   </dialog>
 
   <!-- ======================================================= -->
+  <!-- 8B. PRODUCT IMAGE PREVIEW MODAL                         -->
+  <!-- ======================================================= -->
+  <dialog id="modal-image-preview" class="modal modal-bottom sm:modal-middle bg-slate-950/90 backdrop-blur-md">
+    <div class="modal-box bg-slate-900 border border-slate-700 text-white rounded-t-3xl sm:rounded-3xl p-4 max-w-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-indigo-400 text-base">photo_library</span>
+          <span class="text-xs font-bold text-indigo-300 font-mono" id="preview-img-sku">SKU</span>
+        </div>
+        <button onclick="document.getElementById('modal-image-preview').close()" class="btn btn-ghost btn-xs btn-circle text-slate-400">
+          <span class="material-symbols-outlined text-base">close</span>
+        </button>
+      </div>
+      <div class="w-full aspect-square bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center p-2 relative shadow-inner">
+        <img id="preview-img-src" src="" alt="Foto Produk" class="max-w-full max-h-full object-contain rounded-xl" onerror="this.src=''; this.classList.add('hidden'); document.getElementById('preview-img-fallback').classList.remove('hidden');" />
+        <div id="preview-img-fallback" class="hidden text-center text-slate-500 space-y-1">
+          <span class="material-symbols-outlined text-5xl">image_not_supported</span>
+          <p class="text-[11px]">Foto tidak tersedia di database</p>
+        </div>
+      </div>
+      <div class="space-y-1 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+        <div id="preview-img-name" class="text-xs font-bold text-white leading-tight">Nama Produk</div>
+        <div class="flex items-center justify-between text-[11px] font-mono pt-1 border-t border-slate-800/60">
+          <span id="preview-img-rak" class="text-indigo-400 font-bold">Rak: -</span>
+          <span id="preview-img-var" class="text-slate-400">Varian: -</span>
+        </div>
+      </div>
+      <button onclick="document.getElementById('modal-image-preview').close()" class="btn btn-xs btn-neutral w-full rounded-xl">Tutup Preview</button>
+    </div>
+  </dialog>
+
+  <!-- ======================================================= -->
   <!-- 9. TOAST NOTIFICATION CONTAINER                         -->
   <!-- ======================================================= -->
   <div id="toast-container" class="fixed top-14 left-0 right-0 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"></div>
@@ -942,13 +976,17 @@
       currentZoom = Number(level) || 1.0;
       
       // Update UI active zoom buttons
-      ['1x', '2x', '3x'].forEach(z => {
+      ['0.7x', '1x', '1.5x', '2x'].forEach(z => {
         const btn = document.getElementById(`zoom-${z}`);
         if (btn) {
-          if (z === `${Math.round(currentZoom)}x` || (currentZoom === 1 && z === '1x')) {
+          const isMatch = (z === '0.7x' && currentZoom <= 0.85) || 
+                          (z === '1x' && currentZoom > 0.85 && currentZoom <= 1.2) ||
+                          (z === '1.5x' && currentZoom > 1.2 && currentZoom <= 1.7) ||
+                          (z === '2x' && currentZoom > 1.7);
+          if (isMatch) {
             btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow';
           } else {
-            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-400 hover:text-white';
+            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white';
           }
         }
       });
@@ -964,12 +1002,11 @@
             cameraTrack.applyConstraints({
               advanced: [{ zoom: targetZoom }]
             }).catch(err => console.warn('Hardware zoom warning:', err));
-            return;
           }
         } catch (e) {}
       }
 
-      // 2. High-Performance CSS Viewfinder Magnification (Universal Fallback for all devices)
+      // 2. High-Performance CSS Viewfinder Scale (Universal Wide/Zoom Handler)
       const videoElem = document.querySelector('#reader video');
       if (videoElem) {
         videoElem.style.transform = `scale(${currentZoom})`;
@@ -993,14 +1030,19 @@
       }
 
       const config = {
-        fps: 15,
+        fps: 20,
         qrbox: function(viewfinderWidth, viewfinderHeight) {
           return {
-            width: Math.floor(viewfinderWidth * 0.70),
-            height: Math.floor(viewfinderHeight * 0.50)
+            width: Math.floor(viewfinderWidth * 0.88),
+            height: Math.floor(viewfinderHeight * 0.65)
           };
         },
-        aspectRatio: 1.777778
+        aspectRatio: 1.333333, // 4:3 rasio natural sensor kamera smartphone (jauh lebih luas, tidak terpotong crop 16:9)
+        videoConstraints: {
+          facingMode: { ideal: cameraFacing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       };
 
       html5QrCode.start(
@@ -1023,7 +1065,7 @@
               track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             }
 
-            // START KAMERA DI ZOOM 1x (jarak normal, seperti buka kamera biasa)
+            // Pastikan sensor kamera berada di zoom 1.0x (jarak jauh alami, uncropped)
             setCameraZoom(1.0);
           }
         } catch (e) {}
@@ -1231,18 +1273,31 @@
 
         grouped[rak].forEach(it => {
           if (it.picked) pickedCount++;
+          const safeImg = encodeURIComponent(it.image || '');
+          const safeName = encodeURIComponent(it.name || '');
+          const safeSku = encodeURIComponent(it.sku || '');
+          const safeRak = encodeURIComponent(it.rak || rak || 'DEFAULT');
+          const safeVar = encodeURIComponent(it.variation || '-');
+
           html += `
-            <div class="p-3 flex items-center justify-between ${it.picked ? 'bg-emerald-950/30' : ''}">
-              <div class="space-y-0.5 flex-1 pr-2">
-                <div class="font-bold text-xs text-white leading-tight">${it.name}</div>
-                <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-400">
+            <div class="p-3 flex items-center justify-between gap-2.5 ${it.picked ? 'bg-emerald-950/30' : ''}">
+              <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center relative cursor-pointer group shadow" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                ${it.image ? `<img src="${it.image}" alt="${it.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" />` : ''}
+                <span class="material-symbols-outlined text-slate-500 text-2xl ${it.image ? 'hidden' : ''}">inventory_2</span>
+                <span class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                  <span class="material-symbols-outlined text-base">zoom_in</span>
+                </span>
+              </div>
+              <div class="space-y-0.5 flex-1 min-w-0 pr-1">
+                <div class="font-bold text-xs text-white leading-tight line-clamp-2">${it.name}</div>
+                <div class="flex items-center flex-wrap gap-1.5 text-[11px] text-slate-400">
                   <span class="font-mono text-indigo-300 font-semibold">${it.sku}</span>
                   <span>•</span>
                   <span>Var: ${it.variation || '-'}</span>
                   ${it.picked && it.pickedAt ? `<span class="text-emerald-400 font-mono text-[10px] font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">⏱️ ${it.pickedAt}</span>` : ''}
                 </div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 shrink-0">
                 <span class="text-xs font-bold font-mono ${it.picked ? 'text-emerald-400' : 'text-slate-200'}">x${it.qty}</span>
                 <button onclick="toggleItemPicked('${it.id}')" class="btn btn-xs btn-circle ${it.picked ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'} border-none shadow">
                   <span class="material-symbols-outlined text-[15px]">${it.picked ? 'check' : 'check_box_outline_blank'}</span>
@@ -1399,23 +1454,37 @@
         <div class="space-y-1.5">
           <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">VERIFIKASI ITEM DALAM PAKET</div>
           <div class="space-y-2">
-            ${o.items.map(it => `
-              <div class="glass-card p-3 rounded-2xl flex items-center justify-between border ${it.verified ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'}">
-                <div class="space-y-0.5 flex-1 pr-2">
-                  <div class="font-bold text-xs text-white leading-tight">${it.name}</div>
-                  <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-400 font-mono">
+            ${o.items.map(it => {
+              const safeImg = encodeURIComponent(it.image || '');
+              const safeName = encodeURIComponent(it.name || '');
+              const safeSku = encodeURIComponent(it.sku || '');
+              const safeRak = encodeURIComponent(it.rak || 'DEFAULT');
+              const safeVar = encodeURIComponent(it.variation || '-');
+
+              return `
+              <div class="glass-card p-3 rounded-2xl flex items-center justify-between gap-2.5 border ${it.verified ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800'}">
+                <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center relative cursor-pointer group shadow" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                  ${it.image ? `<img src="${it.image}" alt="${it.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" />` : ''}
+                  <span class="material-symbols-outlined text-slate-500 text-2xl ${it.image ? 'hidden' : ''}">inventory_2</span>
+                  <span class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                    <span class="material-symbols-outlined text-base">zoom_in</span>
+                  </span>
+                </div>
+                <div class="space-y-0.5 flex-1 min-w-0 pr-1">
+                  <div class="font-bold text-xs text-white leading-tight line-clamp-2">${it.name}</div>
+                  <div class="flex items-center flex-wrap gap-1.5 text-[11px] text-slate-400 font-mono">
                     <span>${it.sku} (Var: ${it.variation || '-'})</span>
                     ${it.verified && it.verifiedAt ? `<span class="text-emerald-400 text-[10px] font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">⏱️ ${it.verifiedAt}</span>` : ''}
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                   <span class="text-xs font-bold font-mono ${it.verified ? 'text-emerald-400' : 'text-slate-300'}">x${it.qty}</span>
                   <span class="material-symbols-outlined ${it.verified ? 'text-emerald-400' : 'text-slate-600'} text-xl">
                     ${it.verified ? 'check_circle' : 'radio_button_unchecked'}
                   </span>
                 </div>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </div>
 
@@ -1511,15 +1580,31 @@
             <span class="text-xs font-bold text-white">${res.totalQty} Pcs (${res.totalSku} SKU)</span>
           </div>
           <div class="space-y-2">
-            ${res.products.map(p => `
-              <div class="glass-card p-3 rounded-2xl space-y-1">
-                <div class="flex justify-between items-start">
-                  <div class="font-bold text-xs text-white leading-tight">${p.name}</div>
+            ${res.products.map(p => {
+              const safeImg = encodeURIComponent(p.image || '');
+              const safeName = encodeURIComponent(p.name || '');
+              const safeSku = encodeURIComponent(p.sku || '');
+              const safeRak = encodeURIComponent(res.rak || 'DEFAULT');
+              const safeVar = encodeURIComponent(p.variation || '-');
+
+              return `
+              <div class="glass-card p-3 rounded-2xl flex items-center justify-between gap-2.5">
+                <div class="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center relative cursor-pointer group shadow" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                  ${p.image ? `<img src="${p.image}" alt="${p.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" />` : ''}
+                  <span class="material-symbols-outlined text-slate-500 text-xl ${p.image ? 'hidden' : ''}">inventory_2</span>
+                  <span class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                    <span class="material-symbols-outlined text-sm">zoom_in</span>
+                  </span>
+                </div>
+                <div class="space-y-0.5 flex-1 min-w-0">
+                  <div class="font-bold text-xs text-white leading-tight line-clamp-2">${p.name}</div>
+                  <div class="text-[11px] text-slate-400 font-mono">${p.sku} • Var: ${p.variation}</div>
+                </div>
+                <div class="shrink-0">
                   <span class="badge badge-sm bg-slate-800 text-emerald-400 font-bold font-mono">${p.stock} Pcs</span>
                 </div>
-                <div class="text-[11px] text-slate-400 font-mono">${p.sku} • Var: ${p.variation}</div>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         `;
       } else {
@@ -1544,18 +1629,36 @@
       const res = await runGasAsync('getProductLocations', { keyword: kw, sku: kw });
       if (res.success && res.results && res.results.length > 0) {
         playBeep('success');
-        container.innerHTML = res.results.map(r => `
-          <div class="glass-card p-3 rounded-2xl space-y-1.5 border-slate-800">
-            <div class="font-bold text-xs text-white">${r.name}</div>
-            <div class="text-[11px] text-slate-400 font-mono">${r.sku} • Var: ${r.variation}</div>
+        container.innerHTML = res.results.map(r => {
+          const safeImg = encodeURIComponent(r.image || '');
+          const safeName = encodeURIComponent(r.name || '');
+          const safeSku = encodeURIComponent(r.sku || '');
+          const safeRak = encodeURIComponent(r.rak || 'DEFAULT');
+          const safeVar = encodeURIComponent(r.variation || '-');
+
+          return `
+          <div class="glass-card p-3 rounded-2xl space-y-2 border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center relative cursor-pointer group shadow" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                ${r.image ? `<img src="${r.image}" alt="${r.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" />` : ''}
+                <span class="material-symbols-outlined text-slate-500 text-2xl ${r.image ? 'hidden' : ''}">inventory_2</span>
+                <span class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                  <span class="material-symbols-outlined text-base">zoom_in</span>
+                </span>
+              </div>
+              <div class="space-y-0.5 flex-1 min-w-0">
+                <div class="font-bold text-xs text-white leading-tight line-clamp-2">${r.name}</div>
+                <div class="text-[11px] text-slate-400 font-mono">${r.sku} • Var: ${r.variation}</div>
+              </div>
+            </div>
             <div class="flex items-center justify-between pt-1.5 border-t border-slate-800 flex-wrap gap-1">
               <div class="flex flex-wrap gap-1 items-center">
                 ${String(r.rak || 'DEFAULT').split(/[,;\/]+/).map(k => k.trim()).filter(Boolean).map(k => `<span class="px-1.5 py-0.5 rounded-lg bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[11px] font-mono font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">shelves</span>${k.toLowerCase().startsWith('rak') ? k : 'Rak: ' + k}</span>`).join(' ')}
               </div>
               <span class="badge badge-sm bg-emerald-950/60 border-emerald-500/30 text-emerald-300 font-mono font-bold">Stok: ${r.stock}</span>
             </div>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       } else {
         playBeep('error');
         container.innerHTML = `
@@ -1772,6 +1875,42 @@
         showToast('Koneksi gagal: ' + err.message, 'error');
       }
     }
+
+    // ================= IMAGE PREVIEW CONTROLLER =================
+    function openImagePreview(encImg, encName, encSku, encRak, encVar) {
+      try {
+        const img = decodeURIComponent(encImg || '');
+        const name = decodeURIComponent(encName || 'Produk Mainan');
+        const sku = decodeURIComponent(encSku || '-');
+        const rak = decodeURIComponent(encRak || 'DEFAULT');
+        const varian = decodeURIComponent(encVar || '-');
+
+        const modal = document.getElementById('modal-image-preview');
+        const imgEl = document.getElementById('preview-img-src');
+        const fallback = document.getElementById('preview-img-fallback');
+
+        document.getElementById('preview-img-sku').innerText = sku;
+        document.getElementById('preview-img-name').innerText = name;
+        document.getElementById('preview-img-rak').innerText = `Rak: ${rak}`;
+        document.getElementById('preview-img-var').innerText = `Var: ${varian}`;
+
+        if (img && (img.startsWith('http') || img.startsWith('data:'))) {
+          imgEl.src = img;
+          imgEl.classList.remove('hidden');
+          fallback.classList.add('hidden');
+        } else {
+          imgEl.src = '';
+          imgEl.classList.add('hidden');
+          fallback.classList.remove('hidden');
+        }
+
+        modal.showModal();
+        playBeep('mode_switch');
+      } catch (e) {
+        console.error('openImagePreview error:', e);
+      }
+    }
+    window.openImagePreview = openImagePreview;
 
     // ================= CLOCK & INITIALIZATION =================
     function startClock() {
