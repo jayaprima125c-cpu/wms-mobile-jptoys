@@ -67,11 +67,22 @@
     #reader__dashboard_section_csr, #reader__dashboard_section_swaplink {
       display: none !important;
     }
-    #reader video {
-      border-radius: 1rem;
-      object-fit: contain !important;
+    #reader {
       width: 100% !important;
-      max-height: 230px !important;
+      aspect-ratio: 1 / 1 !important;
+      max-width: 270px !important;
+      max-height: 270px !important;
+      margin: 0 auto !important;
+      border-radius: 1.25rem !important;
+      overflow: hidden !important;
+      background: #020617;
+    }
+    #reader video {
+      border-radius: 1.25rem !important;
+      object-fit: cover !important;
+      width: 100% !important;
+      height: 100% !important;
+      aspect-ratio: 1 / 1 !important;
       background: #020617;
     }
     ::-webkit-scrollbar { width: 3px; height: 3px; }
@@ -148,9 +159,9 @@
         </label>
 
         <!-- Submit Button -->
-        <button onclick="handleLoginSubmit()" class="btn btn-primary w-full bg-indigo-600 hover:bg-indigo-500 border-none text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/30 text-sm h-11">
-          <span>Masuk ke Scanner</span>
-          <span class="material-symbols-outlined text-lg">login</span>
+        <button onclick="handleLoginSubmit()" class="btn btn-sm w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold rounded-2xl border-none shadow-lg shadow-indigo-600/30 gap-2">
+          <span>Masuk Sistem WMS</span>
+          <span class="material-symbols-outlined text-sm">login</span>
         </button>
       </div>
 
@@ -177,8 +188,11 @@
   <!-- ======================================================= -->
   <!-- 2. STICKY TOP HEADER                                    -->
   <!-- ======================================================= -->
-  <header class="glass-card border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between z-30 shrink-0">
-    <div class="flex items-center gap-2.5">
+  <header class="glass-card border-b border-slate-800/80 px-3 py-2 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center gap-2">
+      <button id="header-back-btn" onclick="handleBackNavigation()" class="hidden btn btn-ghost btn-xs btn-circle text-sky-400 hover:bg-sky-950/40" title="Kembali ke Dashboard">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+      </button>
       <div class="w-9 h-9 rounded-xl bg-slate-900/90 p-1 border border-white/15 flex items-center justify-center shadow-md shadow-sky-600/20 cursor-pointer overflow-hidden" onclick="switchScannerMode('dashboard')">
         <img src="logo.png" alt="WMS Logo" class="w-full h-full object-contain">
       </div>
@@ -244,36 +258,36 @@
   <!-- 4. CAMERA VIEWFINDER (AUTO ACTIVE ON SCANNER MODES)     -->
   <!-- ======================================================= -->
   <div id="camera-viewfinder-wrapper" class="hidden px-3 pt-2 pb-1 shrink-0 z-20 bg-slate-950">
-    <div class="relative w-full rounded-2xl overflow-hidden bg-slate-900 border border-indigo-500/30 shadow-lg">
+    <div class="relative w-full max-w-[270px] mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-indigo-500/30 shadow-lg aspect-square flex items-center justify-center">
       
-      <!-- Video Target Element for HTML5-QRCode -->
-      <div id="reader" class="w-full bg-slate-950" style="min-height: 150px;"></div>
+      <!-- Video Target Element for HTML5-QRCode (1:1 Square) -->
+      <div id="reader" class="w-full h-full bg-slate-950"></div>
       
       <!-- Animated Laser Line Overlay -->
       <div class="scan-laser pointer-events-none"></div>
 
       <!-- Quick Camera & Zoom Controls Floating Pill -->
-      <div class="absolute top-2 right-2 flex items-center gap-1.5 z-20">
+      <div class="absolute top-2 right-2 flex items-center gap-1 z-20">
         <!-- Quick Zoom Selector -->
         <div class="flex items-center bg-slate-950/85 border border-slate-700/90 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
-          <button id="zoom-0.7x" onclick="setCameraZoom(0.7)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white" title="Jauh (Ultra Wide)">0.7x</button>
-          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow" title="Normal">1x</button>
-          <button id="zoom-1.5x" onclick="setCameraZoom(1.5)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">1.5x</button>
-          <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-1.5 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
+          <button id="zoom-0.7x" onclick="setCameraZoom(0.7)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white" title="Jauh (Ultra Wide)">0.7x</button>
+          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-indigo-600 text-white shadow" title="Normal">1x</button>
+          <button id="zoom-1.5x" onclick="setCameraZoom(1.5)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white">1.5x</button>
+          <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
         </div>
 
         <button id="btn-torch" onclick="toggleTorch()" title="Senter" class="btn btn-xs btn-circle bg-slate-950/85 border border-slate-700 text-slate-300 shadow">
-          <span class="material-symbols-outlined text-[15px]">flashlight_on</span>
+          <span class="material-symbols-outlined text-[14px]">flashlight_on</span>
         </button>
         <button onclick="switchCameraFacing()" title="Ganti Kamera" class="btn btn-xs btn-circle bg-slate-950/85 border border-slate-700 text-slate-300 shadow">
-          <span class="material-symbols-outlined text-[15px]">flip_camera_ios</span>
+          <span class="material-symbols-outlined text-[14px]">flip_camera_ios</span>
         </button>
       </div>
 
       <!-- Camera Status Badge -->
       <div class="absolute bottom-2 left-2 flex items-center gap-1.5 bg-slate-950/85 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] text-slate-300 z-20 pointer-events-none">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="camera-badge-text">Kamera Aktif</span>
+        <span id="camera-badge-text">Kamera 1:1 Aktif</span>
       </div>
 
       <!-- Retry Permission Button if Camera blocked -->
@@ -285,9 +299,9 @@
     </div>
 
     <!-- Manual Barcode Input Bar / Gun Scanner Support -->
-    <div class="mt-1.5 flex items-center gap-1.5">
+    <div class="mt-1.5 flex items-center gap-1.5 max-w-[270px] mx-auto">
       <div class="relative flex-1">
-        <input type="text" id="manual-barcode-input" placeholder="Scan barcode / ketik manual..." class="input input-xs w-full bg-slate-900 border-slate-800 text-white text-xs pl-7 rounded-xl font-mono" onkeydown="if(event.key==='Enter') handleManualScanSubmit()">
+        <input type="text" id="manual-barcode-input" placeholder="Scan barcode SKU / no. resi..." class="input input-xs w-full bg-slate-900 border-slate-800 text-white text-xs pl-7 rounded-xl font-mono" onkeydown="if(event.key==='Enter') handleManualScanSubmit()">
         <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-500">
           <span class="material-symbols-outlined text-[14px]">barcode_scanner</span>
         </span>
@@ -322,7 +336,7 @@
         </div>
       </div>
 
-      <!-- Order Status Summary (Semua Petugas) -->
+      <!-- Order Status Summary (Semua Petugas - Tampilan Saja / Non-Clickable) -->
       <div class="space-y-1.5">
         <div class="flex items-center justify-between px-1">
           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">STATUS PESANAN HARI INI</span>
@@ -331,28 +345,40 @@
             <span id="dash-refresh-text">Segarkan</span>
           </button>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="glass-card p-2.5 rounded-2xl border border-indigo-500/30 space-y-0.5 text-center">
-            <div class="text-[9px] font-bold text-indigo-400 uppercase">Pesanan Baru</div>
-            <div class="flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-indigo-400 text-sm">fiber_new</span>
-              <span id="dash-stat-new" class="text-lg font-black text-white">0</span>
+        <div class="grid grid-cols-2 gap-2">
+          <!-- 1. Pesanan Baru -->
+          <div class="glass-card p-2.5 rounded-2xl border border-indigo-500/30 space-y-0.5 text-center select-none cursor-default">
+            <div class="text-[10px] font-bold text-indigo-400 uppercase">Pesanan Baru</div>
+            <div class="flex items-center justify-center gap-1.5 py-0.5">
+              <span class="material-symbols-outlined text-indigo-400 text-base">fiber_new</span>
+              <span id="dash-stat-new" class="text-xl font-black text-white">0</span>
             </div>
             <div class="text-[9px] text-slate-500">Belum diproses</div>
           </div>
-          <div class="glass-card p-2.5 rounded-2xl border border-amber-500/30 space-y-0.5 text-center">
-            <div class="text-[9px] font-bold text-amber-400 uppercase">Dalam Proses</div>
-            <div class="flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-amber-400 text-sm">pending_actions</span>
-              <span id="dash-stat-process" class="text-lg font-black text-white">0</span>
+          <!-- 2. Dalam Proses -->
+          <div class="glass-card p-2.5 rounded-2xl border border-amber-500/30 space-y-0.5 text-center select-none cursor-default">
+            <div class="text-[10px] font-bold text-amber-400 uppercase">Dalam Proses</div>
+            <div class="flex items-center justify-center gap-1.5 py-0.5">
+              <span class="material-symbols-outlined text-amber-400 text-base">pending_actions</span>
+              <span id="dash-stat-process" class="text-xl font-black text-white">0</span>
             </div>
-            <div class="text-[9px] text-slate-500">Picking / Packing</div>
+            <div class="text-[9px] text-slate-500">Proses Picking & Packing</div>
           </div>
-          <div class="glass-card p-2.5 rounded-2xl border border-emerald-500/30 space-y-0.5 text-center">
-            <div class="text-[9px] font-bold text-emerald-400 uppercase">Dikirim</div>
-            <div class="flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-emerald-400 text-sm">local_shipping</span>
-              <span id="dash-stat-ship" class="text-lg font-black text-white">0</span>
+          <!-- 3. Siap Dikirim -->
+          <div class="glass-card p-2.5 rounded-2xl border border-purple-500/30 space-y-0.5 text-center select-none cursor-default">
+            <div class="text-[10px] font-bold text-purple-400 uppercase">Siap Dikirim</div>
+            <div class="flex items-center justify-center gap-1.5 py-0.5">
+              <span class="material-symbols-outlined text-purple-400 text-base">mark_email_read</span>
+              <span id="dash-stat-ready" class="text-xl font-black text-white">0</span>
+            </div>
+            <div class="text-[9px] text-slate-500">Siap serah ke kurir</div>
+          </div>
+          <!-- 4. Dikirim -->
+          <div class="glass-card p-2.5 rounded-2xl border border-emerald-500/30 space-y-0.5 text-center select-none cursor-default">
+            <div class="text-[10px] font-bold text-emerald-400 uppercase">Dikirim</div>
+            <div class="flex items-center justify-center gap-1.5 py-0.5">
+              <span class="material-symbols-outlined text-emerald-400 text-base">local_shipping</span>
+              <span id="dash-stat-ship" class="text-xl font-black text-white">0</span>
             </div>
             <div class="text-[9px] text-slate-500">Telah dikirim</div>
           </div>
@@ -1030,18 +1056,32 @@
       }
 
       const config = {
-        fps: 20,
+        fps: 25,
         qrbox: function(viewfinderWidth, viewfinderHeight) {
-          return {
-            width: Math.floor(viewfinderWidth * 0.88),
-            height: Math.floor(viewfinderHeight * 0.65)
-          };
+          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(minDim * 0.85);
+          return { width: size, height: size };
         },
-        aspectRatio: 1.333333, // 4:3 rasio natural sensor kamera smartphone (jauh lebih luas, tidak terpotong crop 16:9)
+        aspectRatio: 1.0, // 1:1 Aspect ratio square (kotak presisi)
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.DATA_MATRIX
+        ],
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
         videoConstraints: {
           facingMode: { ideal: cameraFacing },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1080 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 1.0 }
         }
       };
 
@@ -1065,7 +1105,6 @@
               track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             }
 
-            // Pastikan sensor kamera berada di zoom 1.0x (jarak jauh alami, uncropped)
             setCameraZoom(1.0);
           }
         } catch (e) {}
@@ -1111,7 +1150,7 @@
       lastScannedTime = now;
       scanAttemptCount = 0;
 
-      // Reset zoom ke 1x setelah scan berhasil (delay 1.5 detik agar user lihat hasil scan)
+      // Reset zoom ke 1x setelah scan berhasil
       if (autoZoomTimer) clearTimeout(autoZoomTimer);
       autoZoomTimer = setTimeout(() => {
         if (currentZoom > 1) setCameraZoom(1.0);
@@ -1121,14 +1160,10 @@
     }
 
     function onBarcodeScanError(err) {
-      // Auto-zoom: jika kamera sudah aktif tapi belum berhasil scan selama beberapa attempt,
-      // perlahan zoom ke 2x untuk membantu deteksi barcode kecil/jauh
       scanAttemptCount++;
       if (scanAttemptCount === 45 && currentZoom < 1.5) {
-        // Setelah ~3 detik (45 frames @ 15fps) tanpa scan berhasil, auto-zoom ke 1.5x
         setCameraZoom(1.5);
       } else if (scanAttemptCount === 90 && currentZoom < 2.0) {
-        // Setelah ~6 detik, zoom ke 2x
         setCameraZoom(2.0);
       }
     }
@@ -1166,7 +1201,8 @@
           const stats = JSON.parse(cached);
           if (document.getElementById('dash-stat-new')) document.getElementById('dash-stat-new').innerText = stats.newOrders || 0;
           if (document.getElementById('dash-stat-process')) document.getElementById('dash-stat-process').innerText = stats.inProcess || 0;
-          if (document.getElementById('dash-stat-ship')) document.getElementById('dash-stat-ship').innerText = stats.readyToShip || 0;
+          if (document.getElementById('dash-stat-ready')) document.getElementById('dash-stat-ready').innerText = stats.readyToShip || 0;
+          if (document.getElementById('dash-stat-ship')) document.getElementById('dash-stat-ship').innerText = stats.shippedOrders || 0;
           if (document.getElementById('dash-stat-picking')) document.getElementById('dash-stat-picking').innerText = `${stats.pickingPending || 0} Menunggu`;
           if (document.getElementById('dash-stat-packing')) document.getElementById('dash-stat-packing').innerText = `${stats.packingPending || 0} Menunggu`;
         }
@@ -1179,18 +1215,19 @@
       if (isManual) showToast('Menyinkronkan data pesanan dari server...', 'info');
 
       try {
-        const res = await runGasAsync('getDashboardStats');
+        const res = await runGasAsync('getDashboardStats', { petugas: currentPetugas });
         if (res && res.success && res.stats) {
-          // Simpan ke cache lokal
           localStorage.setItem('wms_cached_dashboard_stats', JSON.stringify(res.stats));
           
-          // 3 Status Pesanan
-          document.getElementById('dash-stat-new').innerText = res.stats.newOrders || 0;
-          document.getElementById('dash-stat-process').innerText = res.stats.inProcess || 0;
-          document.getElementById('dash-stat-ship').innerText = res.stats.readyToShip || 0;
+          // 4 Status Pesanan (Display-Only)
+          if (document.getElementById('dash-stat-new')) document.getElementById('dash-stat-new').innerText = res.stats.newOrders || 0;
+          if (document.getElementById('dash-stat-process')) document.getElementById('dash-stat-process').innerText = res.stats.inProcess || 0;
+          if (document.getElementById('dash-stat-ready')) document.getElementById('dash-stat-ready').innerText = res.stats.readyToShip || 0;
+          if (document.getElementById('dash-stat-ship')) document.getElementById('dash-stat-ship').innerText = res.stats.shippedOrders || 0;
+          
           // Action cards
-          document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending || 0} Menunggu`;
-          document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending || 0} Menunggu`;
+          if (document.getElementById('dash-stat-picking')) document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending || 0} Menunggu`;
+          if (document.getElementById('dash-stat-packing')) document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending || 0} Menunggu`;
 
           if (isManual) {
             playBeep('scan_success');
@@ -1211,7 +1248,7 @@
     // ================= CONTROLLER: PICKING =================
     async function loadPickingData() {
       try {
-        const res = await runGasAsync('getPickingBatches');
+        const res = await runGasAsync('getPickingBatches', { petugas: currentPetugas });
         if (res.success) {
           pickingBatches = res.batches || [];
           pickingItems = res.items || [];
@@ -1792,12 +1829,20 @@
       }
     }
 
-    // ================= MODE SWITCHER =================
-    function switchScannerMode(mode) {
+    // ================= MODE SWITCHER & BACK NAVIGATION =================
+    function switchScannerMode(mode, fromHistory = false) {
       if (currentMode !== mode) {
         playBeep('mode_switch');
       }
       currentMode = mode;
+
+      if (!fromHistory) {
+        if (mode === 'dashboard') {
+          history.replaceState({ mode: 'dashboard' }, '');
+        } else {
+          history.pushState({ mode: mode }, '');
+        }
+      }
       
       ['dashboard', 'picking', 'packing', 'transfer', 'posisi', 'opname'].forEach(m => {
         const tab = document.getElementById(`tab-${m}`);
@@ -1813,15 +1858,18 @@
         }
       });
 
+      const headerBackBtn = document.getElementById('header-back-btn');
       const cameraWrapper = document.getElementById('camera-viewfinder-wrapper');
       const bottomBar = document.getElementById('bottom-action-wrapper');
       const mainBtnText = document.getElementById('btn-main-action-text');
 
       if (mode === 'dashboard') {
+        if (headerBackBtn) headerBackBtn.classList.add('hidden');
         cameraWrapper.classList.add('hidden');
         bottomBar.classList.add('hidden');
         loadDashboardData();
       } else {
+        if (headerBackBtn) headerBackBtn.classList.remove('hidden');
         cameraWrapper.classList.remove('hidden');
         startCameraScanner();
 
@@ -1842,6 +1890,58 @@
         }
       }
     }
+    window.switchScannerMode = switchScannerMode;
+
+    function handleBackNavigation() {
+      // 1. Cek apakah ada dialog modal yang sedang terbuka
+      const imgModal = document.getElementById('modal-img-preview');
+      if (imgModal && imgModal.open) {
+        imgModal.close();
+        return;
+      }
+      const batchModal = document.getElementById('modal-picking-batches');
+      if (batchModal && batchModal.open) {
+        batchModal.close();
+        return;
+      }
+      const setModal = document.getElementById('modal-settings');
+      if (setModal && setModal.open) {
+        setModal.close();
+        return;
+      }
+
+      // 2. Jika di sub-mode scanner, kembali ke Dashboard
+      if (currentMode !== 'dashboard') {
+        switchScannerMode('dashboard');
+      }
+    }
+    window.handleBackNavigation = handleBackNavigation;
+
+    // Handler tombol Back fisik/gesture HP
+    window.addEventListener('popstate', (event) => {
+      const imgModal = document.getElementById('modal-img-preview');
+      if (imgModal && imgModal.open) {
+        imgModal.close();
+        return;
+      }
+      const batchModal = document.getElementById('modal-picking-batches');
+      if (batchModal && batchModal.open) {
+        batchModal.close();
+        return;
+      }
+      const setModal = document.getElementById('modal-settings');
+      if (setModal && setModal.open) {
+        setModal.close();
+        return;
+      }
+
+      const state = event.state;
+      if (state && state.mode) {
+        switchScannerMode(state.mode, true);
+      } else {
+        switchScannerMode('dashboard', true);
+      }
+    });
 
     // ================= SETTINGS & API MODAL =================
     function openSettingsModal() {
