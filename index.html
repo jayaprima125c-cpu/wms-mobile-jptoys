@@ -385,6 +385,27 @@
         </div>
       </div>
 
+      <!-- Ringkasan Master Produk & Sisa Stok Gudang -->
+      <div onclick="switchScannerMode('posisi'); switchPosisiSubTab('katalog');" class="glass-card p-3 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-slate-900 to-slate-950 cursor-pointer hover:border-indigo-500/60 transition-all flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <span class="material-symbols-outlined text-2xl">inventory_2</span>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">DATA SISA PRODUK GUDANG</div>
+            <div class="flex items-center gap-2">
+              <span id="dash-stat-total-sku" class="text-sm font-black text-white">0 SKU</span>
+              <span class="text-slate-600">•</span>
+              <span id="dash-stat-total-stok" class="text-xs font-bold text-emerald-400 font-mono">0 Pcs Fisik</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 text-indigo-400 text-xs font-bold">
+          <span>Lihat Stok</span>
+          <span class="material-symbols-outlined text-base">chevron_right</span>
+        </div>
+      </div>
+
       <!-- Quick KPI Action Cards -->
       <div class="grid grid-cols-2 gap-2.5">
         <div onclick="switchScannerMode('picking')" class="glass-card p-3 rounded-2xl border border-slate-800/80 space-y-1 cursor-pointer hover:border-indigo-500/40 transition-all">
@@ -432,7 +453,7 @@
           <button onclick="switchScannerMode('posisi')" class="btn btn-sm h-auto py-2.5 bg-slate-900 hover:bg-slate-800 border-slate-800 rounded-2xl flex flex-col items-start text-left gap-0.5">
             <span class="material-symbols-outlined text-purple-400 text-xl">search_insights</span>
             <span class="text-xs font-bold text-white">Cek Posisi Stok</span>
-            <span class="text-[10px] text-slate-400 font-normal">Scan Rak / Scan SKU</span>
+            <span class="text-[10px] text-slate-400 font-normal">Scan Rak / SKU / Sisa Stok</span>
           </button>
 
           <button onclick="switchScannerMode('opname')" class="btn btn-sm h-auto py-2.5 bg-slate-900 hover:bg-slate-800 border-slate-800 rounded-2xl flex flex-col items-start text-left gap-0.5 col-span-2">
@@ -552,17 +573,20 @@
     </div>
 
     <!-- ---------------------------------------------------- -->
-    <!-- TAB E: POSISI STOK & CEK RAK                         -->
+    <!-- TAB E: POSISI STOK & CEK RAK / KATALOG SISA PRODUK   -->
     <!-- ---------------------------------------------------- -->
     <div id="view-posisi" class="hidden space-y-3">
       
-      <!-- Sub Selector: Cek Rak vs Cek SKU -->
-      <div class="flex bg-slate-900 p-1 rounded-2xl border border-slate-800">
-        <button id="subtab-cek-rak" onclick="switchPosisiSubTab('rak')" class="flex-1 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow">
-          🔍 Cek Posisi Rak
+      <!-- Sub Selector: Cek Rak vs Cek SKU vs Semua Sisa Stok -->
+      <div class="grid grid-cols-3 bg-slate-900 p-1 rounded-2xl border border-slate-800 gap-1">
+        <button id="subtab-cek-rak" onclick="switchPosisiSubTab('rak')" class="py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow">
+          🔍 Cek Rak
         </button>
-        <button id="subtab-cek-sku" onclick="switchPosisiSubTab('sku')" class="flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-400">
-          🏷️ Cek Lokasi SKU
+        <button id="subtab-cek-sku" onclick="switchPosisiSubTab('sku')" class="py-1.5 rounded-xl text-xs font-bold text-slate-400">
+          🏷️ Cek SKU
+        </button>
+        <button id="subtab-cek-katalog" onclick="switchPosisiSubTab('katalog')" class="py-1.5 rounded-xl text-xs font-bold text-slate-400">
+          📦 Sisa Stok
         </button>
       </div>
 
@@ -575,7 +599,7 @@
         </div>
         <div id="posisi-rak-result" class="space-y-2">
           <div class="text-center py-8 text-slate-500 text-xs">
-            Scan barcode rak untuk melihat seluruh produk di rak ini.
+            Scan barcode rak untuk melihat seluruh produk & sisa stok di rak ini.
           </div>
         </div>
       </div>
@@ -583,13 +607,34 @@
       <!-- Mode 2: Cek SKU Form -->
       <div id="posisi-mode-sku" class="hidden space-y-2">
         <div class="relative">
-          <input type="text" id="posisi-sku-input" placeholder="Scan Barcode / Ketik Nama SKU..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs pl-8 pr-16" onkeydown="if(event.key==='Enter') executeCekSku()">
+          <input type="text" id="posisi-sku-input" placeholder="Scan Barcode / Ketik SKU / Nama..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs pl-8 pr-16" onkeydown="if(event.key==='Enter') executeCekSku()">
           <span class="material-symbols-outlined absolute left-2.5 top-2 text-indigo-400 text-sm">barcode</span>
           <button onclick="executeCekSku()" class="btn btn-xs btn-primary absolute right-1.5 top-1 rounded-lg">Cari</button>
         </div>
         <div id="posisi-sku-result" class="space-y-2">
           <div class="text-center py-8 text-slate-500 text-xs">
-            Scan barcode produk untuk melihat produk disimpan di rak mana saja.
+            Scan barcode produk untuk melihat posisi rak & sisa stok.
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode 3: Semua Sisa Stok (Katalog) Form -->
+      <div id="posisi-mode-katalog" class="hidden space-y-2">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">KATALOG SISA STOK OMNICHANNEL</span>
+          <button onclick="loadKatalogSisaStok(true)" class="btn btn-ghost btn-xs text-[10px] text-indigo-400 hover:text-indigo-300 gap-1 px-1.5 py-0.5 h-auto rounded-lg">
+            <span class="material-symbols-outlined text-[14px]">refresh</span>
+            <span>Muat Ulang</span>
+          </button>
+        </div>
+        <div class="relative">
+          <input type="text" id="posisi-katalog-filter" placeholder="Filter SKU / Nama / Rak..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs pl-8 pr-8" oninput="filterKatalogSisaStok(this.value)">
+          <span class="material-symbols-outlined absolute left-2.5 top-2 text-indigo-400 text-sm">search</span>
+          <button onclick="document.getElementById('posisi-katalog-filter').value=''; filterKatalogSisaStok('');" class="material-symbols-outlined absolute right-2.5 top-2 text-slate-500 text-sm hover:text-white">close</button>
+        </div>
+        <div id="posisi-katalog-result" class="space-y-2 max-h-[60vh] overflow-y-auto pr-0.5">
+          <div class="text-center py-8 text-slate-500 text-xs">
+            Memuat data sisa stok dari database...
           </div>
         </div>
       </div>
@@ -1205,6 +1250,8 @@
           if (document.getElementById('dash-stat-ship')) document.getElementById('dash-stat-ship').innerText = stats.shippedOrders || 0;
           if (document.getElementById('dash-stat-picking')) document.getElementById('dash-stat-picking').innerText = `${stats.pickingPending || 0} Menunggu`;
           if (document.getElementById('dash-stat-packing')) document.getElementById('dash-stat-packing').innerText = `${stats.packingPending || 0} Menunggu`;
+          if (document.getElementById('dash-stat-total-sku')) document.getElementById('dash-stat-total-sku').innerText = `${stats.totalProduk || 0} SKU`;
+          if (document.getElementById('dash-stat-total-stok')) document.getElementById('dash-stat-total-stok').innerText = `${(stats.totalSisaStok || 0).toLocaleString('id-ID')} Pcs Fisik`;
         }
       } catch (e) {}
     }
@@ -1228,6 +1275,10 @@
           // Action cards
           if (document.getElementById('dash-stat-picking')) document.getElementById('dash-stat-picking').innerText = `${res.stats.pickingPending || 0} Menunggu`;
           if (document.getElementById('dash-stat-packing')) document.getElementById('dash-stat-packing').innerText = `${res.stats.packingPending || 0} Menunggu`;
+
+          // Sisa Produk & SKU
+          if (document.getElementById('dash-stat-total-sku')) document.getElementById('dash-stat-total-sku').innerText = `${res.stats.totalProduk || 0} SKU`;
+          if (document.getElementById('dash-stat-total-stok')) document.getElementById('dash-stat-total-stok').innerText = `${(res.stats.totalSisaStok || 0).toLocaleString('id-ID')} Pcs Fisik`;
 
           if (isManual) {
             playBeep('scan_success');
@@ -1568,34 +1619,51 @@
       input.value = val;
     }
 
-    // ================= CONTROLLER: POSISI STOK & CEK RAK =================
+    // ================= CONTROLLER: POSISI STOK & CEK RAK / KATALOG =================
+    let katalogProducts = [];
+
     function switchPosisiSubTab(sub) {
       const btnRak = document.getElementById('subtab-cek-rak');
       const btnSku = document.getElementById('subtab-cek-sku');
+      const btnKatalog = document.getElementById('subtab-cek-katalog');
       const viewRak = document.getElementById('posisi-mode-rak');
       const viewSku = document.getElementById('posisi-mode-sku');
+      const viewKatalog = document.getElementById('posisi-mode-katalog');
+
+      btnRak.className = 'py-1.5 rounded-xl text-xs font-bold text-slate-400';
+      btnSku.className = 'py-1.5 rounded-xl text-xs font-bold text-slate-400';
+      if (btnKatalog) btnKatalog.className = 'py-1.5 rounded-xl text-xs font-bold text-slate-400';
+
+      viewRak.classList.add('hidden');
+      viewSku.classList.add('hidden');
+      if (viewKatalog) viewKatalog.classList.add('hidden');
 
       if (sub === 'rak') {
-        btnRak.className = 'flex-1 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow';
-        btnSku.className = 'flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-400';
+        btnRak.className = 'py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow';
         viewRak.classList.remove('hidden');
-        viewSku.classList.add('hidden');
-      } else {
-        btnSku.className = 'flex-1 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow';
-        btnRak.className = 'flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-400';
+      } else if (sub === 'sku') {
+        btnSku.className = 'py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow';
         viewSku.classList.remove('hidden');
-        viewRak.classList.add('hidden');
+      } else if (sub === 'katalog') {
+        if (btnKatalog) btnKatalog.className = 'py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 shadow';
+        if (viewKatalog) viewKatalog.classList.remove('hidden');
+        loadKatalogSisaStok();
       }
     }
 
     function processPosisiScan(barcode) {
       const isRakVisible = !document.getElementById('posisi-mode-rak').classList.contains('hidden');
+      const isSkuVisible = !document.getElementById('posisi-mode-sku').classList.contains('hidden');
+
       if (isRakVisible) {
         document.getElementById('posisi-rak-input').value = barcode.trim();
         executeCekRak();
-      } else {
+      } else if (isSkuVisible) {
         document.getElementById('posisi-sku-input').value = barcode.trim();
         executeCekSku();
+      } else {
+        document.getElementById('posisi-katalog-filter').value = barcode.trim();
+        filterKatalogSisaStok(barcode.trim());
       }
     }
 
@@ -1637,8 +1705,8 @@
                   <div class="font-bold text-xs text-white leading-tight line-clamp-2">${p.name}</div>
                   <div class="text-[11px] text-slate-400 font-mono">${p.sku} • Var: ${p.variation}</div>
                 </div>
-                <div class="shrink-0">
-                  <span class="badge badge-sm bg-slate-800 text-emerald-400 font-bold font-mono">${p.stock} Pcs</span>
+                <div class="shrink-0 text-right">
+                  <span class="badge badge-sm ${p.stock > 10 ? 'bg-slate-800 text-emerald-400' : (p.stock > 0 ? 'bg-amber-950/80 text-amber-300' : 'bg-rose-950/80 text-rose-300')} font-bold font-mono">${p.stock} Pcs</span>
                 </div>
               </div>`;
             }).join('')}
@@ -1692,7 +1760,7 @@
               <div class="flex flex-wrap gap-1 items-center">
                 ${String(r.rak || 'DEFAULT').split(/[,;\/]+/).map(k => k.trim()).filter(Boolean).map(k => `<span class="px-1.5 py-0.5 rounded-lg bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[11px] font-mono font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">shelves</span>${k.toLowerCase().startsWith('rak') ? k : 'Rak: ' + k}</span>`).join(' ')}
               </div>
-              <span class="badge badge-sm bg-emerald-950/60 border-emerald-500/30 text-emerald-300 font-mono font-bold">Stok: ${r.stock}</span>
+              <span class="badge badge-sm ${r.stock > 10 ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-300' : (r.stock > 0 ? 'bg-amber-950/60 border-amber-500/30 text-amber-300' : 'bg-rose-950/60 border-rose-500/30 text-rose-300')} font-mono font-bold">Stok: ${r.stock} Pcs</span>
             </div>
           </div>`;
         }).join('');
@@ -1700,14 +1768,104 @@
         playBeep('error');
         container.innerHTML = `
           <div class="text-center py-6 text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800">
-            Produk "${kw}" tidak ditemukan.
+            Produk "${kw}" tidak ditemukan di database.
           </div>
         `;
       }
     }
 
+    async function loadKatalogSisaStok(force = false) {
+      const container = document.getElementById('posisi-katalog-result');
+      if (!container) return;
+      if (!force && katalogProducts.length > 0) {
+        renderKatalogSisaStok(katalogProducts);
+        return;
+      }
+
+      container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">Memuat katalog sisa produk dari database...</div>`;
+      try {
+        const res = await runGasAsync('getSisaStok', { keyword: 'ALL' });
+        if (res && res.success && res.results) {
+          katalogProducts = res.results;
+          renderKatalogSisaStok(katalogProducts);
+        } else {
+          container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800">Gagal memuat katalog sisa stok. Silakan klik Muat Ulang.</div>`;
+        }
+      } catch (e) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800">Terjadi kesalahan saat memuat sisa stok.</div>`;
+      }
+    }
+
+    function filterKatalogSisaStok(kw) {
+      kw = String(kw || '').toLowerCase().trim();
+      if (!kw) {
+        renderKatalogSisaStok(katalogProducts);
+        return;
+      }
+      const filtered = katalogProducts.filter(p => 
+        (p.sku && p.sku.toLowerCase().includes(kw)) || 
+        (p.name && p.name.toLowerCase().includes(kw)) || 
+        (p.rak && p.rak.toLowerCase().includes(kw)) ||
+        (p.barcode && p.barcode.toLowerCase().includes(kw))
+      );
+      renderKatalogSisaStok(filtered);
+    }
+
+    function renderKatalogSisaStok(list) {
+      const container = document.getElementById('posisi-katalog-result');
+      if (!container) return;
+      if (!list || list.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800">Tidak ada produk ditemukan.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="text-[10px] font-bold text-slate-400 px-1 py-0.5 flex justify-between items-center">
+          <span>Menampilkan ${list.length} SKU</span>
+        </div>
+        <div class="space-y-2">
+          ${list.map(p => {
+            const safeImg = encodeURIComponent(p.image || '');
+            const safeName = encodeURIComponent(p.name || '');
+            const safeSku = encodeURIComponent(p.sku || '');
+            const safeRak = encodeURIComponent(p.rak || 'DEFAULT');
+            const safeVar = encodeURIComponent(p.variation || '-');
+
+            return `
+            <div class="glass-card p-3 rounded-2xl flex items-center justify-between gap-2.5 border-slate-800">
+              <div class="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700/80 shrink-0 overflow-hidden flex items-center justify-center relative cursor-pointer group shadow" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                ${p.image ? `<img src="${p.image}" alt="${p.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" />` : ''}
+                <span class="material-symbols-outlined text-slate-500 text-xl ${p.image ? 'hidden' : ''}">inventory_2</span>
+                <span class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                  <span class="material-symbols-outlined text-sm">zoom_in</span>
+                </span>
+              </div>
+              <div class="space-y-0.5 flex-1 min-w-0">
+                <div class="font-bold text-xs text-white leading-tight line-clamp-2">${p.name}</div>
+                <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
+                  <span class="text-indigo-300 font-bold">${p.sku}</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.5 rounded bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 font-bold text-[10px] flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[11px]">shelves</span>${p.rak}
+                  </span>
+                </div>
+              </div>
+              <div class="shrink-0 text-right">
+                <span class="badge badge-sm ${p.stock > 10 ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-300' : (p.stock > 0 ? 'bg-amber-950/80 border-amber-500/30 text-amber-300' : 'bg-rose-950/80 border-rose-500/30 text-rose-300')} font-bold font-mono text-xs">
+                  ${p.stock} Pcs
+                </span>
+                <div class="text-[9px] ${p.stock > 10 ? 'text-emerald-400' : (p.stock > 0 ? 'text-amber-400' : 'text-rose-400')} font-bold mt-0.5">
+                  ${p.stock > 10 ? 'Aman' : (p.stock > 0 ? 'Menipis' : 'Habis')}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+    }
+
     // ================= CONTROLLER: OPNAME =================
-    function processOpnameScan(barcode) {
+    async function processOpnameScan(barcode) {
       const clean = barcode.trim().toUpperCase();
       const rakInput = document.getElementById('opname-rak-input');
       const skuInput = document.getElementById('opname-sku-input');
@@ -1716,11 +1874,35 @@
         rakInput.value = clean;
         playBeep('scan_success');
         showToast(`Rak Opname: ${clean}`, 'info');
+        if (skuInput.value) {
+          await fetchOpnameSystemStock(skuInput.value, clean);
+        }
       } else {
         skuInput.value = clean;
         playBeep('scan_success');
         showToast(`SKU Opname: ${clean}`, 'success');
+        await fetchOpnameSystemStock(clean, rakInput.value);
         document.getElementById('opname-qty-input').focus();
+      }
+    }
+
+    async function fetchOpnameSystemStock(sku, rak) {
+      const sysInput = document.getElementById('opname-system-qty');
+      if (!sysInput) return;
+      sysInput.value = 'Mencari...';
+
+      try {
+        const res = await runGasAsync('getProductStockForOpname', { sku: sku, rak: rak });
+        if (res && res.success) {
+          sysInput.value = `${res.stock} Pcs`;
+          if (res.rak && !document.getElementById('opname-rak-input').value) {
+            document.getElementById('opname-rak-input').value = res.rak;
+          }
+        } else {
+          sysInput.value = '0 Pcs';
+        }
+      } catch (e) {
+        sysInput.value = '0 Pcs';
       }
     }
 
@@ -1807,6 +1989,7 @@
         const rak = document.getElementById('opname-rak-input').value.trim();
         const sku = document.getElementById('opname-sku-input').value.trim();
         const qtyFisik = document.getElementById('opname-qty-input').value;
+        const qtySistem = parseInt(document.getElementById('opname-system-qty').value) || 0;
         const notes = document.getElementById('opname-notes-input').value;
 
         if (!rak || !sku) {
@@ -1815,12 +1998,13 @@
           return;
         }
         showToast('Menyimpan hasil opname...', 'info');
-        const res = await runGasAsync('submitStockOpname', { rak: rak, sku: sku, qtyFisik: qtyFisik, qtySistem: 0, petugas: currentPetugas, notes: notes });
+        const res = await runGasAsync('submitStockOpname', { rak: rak, sku: sku, qtyFisik: qtyFisik, qtySistem: qtySistem, petugas: currentPetugas, notes: notes });
         if (res.success) {
           playBeep('opname_saved');
           showToast(res.message || 'Opname berhasil disimpan!', 'success');
           document.getElementById('opname-sku-input').value = '';
           document.getElementById('opname-qty-input').value = '0';
+          document.getElementById('opname-system-qty').value = '--';
           document.getElementById('opname-notes-input').value = '';
         } else {
           playBeep('error');
