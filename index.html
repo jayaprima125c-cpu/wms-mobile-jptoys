@@ -69,9 +69,9 @@
     }
     #reader {
       width: 100% !important;
-      aspect-ratio: 1 / 1 !important;
-      max-width: 270px !important;
-      max-height: 270px !important;
+      aspect-ratio: 4 / 3 !important;
+      max-width: 320px !important;
+      max-height: 240px !important;
       margin: 0 auto !important;
       border-radius: 1.25rem !important;
       overflow: hidden !important;
@@ -82,7 +82,7 @@
       object-fit: cover !important;
       width: 100% !important;
       height: 100% !important;
-      aspect-ratio: 1 / 1 !important;
+      aspect-ratio: 4 / 3 !important;
       background: #020617;
     }
     ::-webkit-scrollbar { width: 3px; height: 3px; }
@@ -258,9 +258,9 @@
   <!-- 4. CAMERA VIEWFINDER (AUTO ACTIVE ON SCANNER MODES)     -->
   <!-- ======================================================= -->
   <div id="camera-viewfinder-wrapper" class="hidden px-3 pt-2 pb-1 shrink-0 z-20 bg-slate-950">
-    <div class="relative w-full max-w-[270px] mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-indigo-500/30 shadow-lg aspect-square flex items-center justify-center">
+    <div class="relative w-full max-w-[320px] mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-indigo-500/30 shadow-lg aspect-[4/3] flex items-center justify-center">
       
-      <!-- Video Target Element for HTML5-QRCode (1:1 Square) -->
+      <!-- Video Target Element for HTML5-QRCode (4:3 Ratio) -->
       <div id="reader" class="w-full h-full bg-slate-950"></div>
       
       <!-- Animated Laser Line Overlay -->
@@ -270,8 +270,8 @@
       <div class="absolute top-2 right-2 flex items-center gap-1 z-20">
         <!-- Quick Zoom Selector -->
         <div class="flex items-center bg-slate-950/85 border border-slate-700/90 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
-          <button id="zoom-0.7x" onclick="setCameraZoom(0.7)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white" title="Jauh (Ultra Wide)">0.7x</button>
-          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-indigo-600 text-white shadow" title="Normal">1x</button>
+          <button id="zoom-0.7x" onclick="setCameraZoom(0.7)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-indigo-600 text-white shadow" title="Jauh (0.7x Ultra Wide)">0.7x</button>
+          <button id="zoom-1x" onclick="setCameraZoom(1.0)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white" title="Normal (1x)">1x</button>
           <button id="zoom-1.5x" onclick="setCameraZoom(1.5)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white">1.5x</button>
           <button id="zoom-2x" onclick="setCameraZoom(2.0)" class="px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white">2x</button>
         </div>
@@ -287,7 +287,7 @@
       <!-- Camera Status Badge -->
       <div class="absolute bottom-2 left-2 flex items-center gap-1.5 bg-slate-950/85 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] text-slate-300 z-20 pointer-events-none">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="camera-badge-text">Kamera 1:1 Aktif</span>
+        <span id="camera-badge-text">Kamera 4:3 Aktif</span>
       </div>
 
       <!-- Retry Permission Button if Camera blocked -->
@@ -299,7 +299,7 @@
     </div>
 
     <!-- Manual Barcode Input Bar / Gun Scanner Support -->
-    <div class="mt-1.5 flex items-center gap-1.5 max-w-[270px] mx-auto">
+    <div class="mt-1.5 flex items-center gap-1.5 max-w-[320px] mx-auto">
       <div class="relative flex-1">
         <input type="text" id="manual-barcode-input" placeholder="Scan barcode SKU / no. resi..." class="input input-xs w-full bg-slate-900 border-slate-800 text-white text-xs pl-7 rounded-xl font-mono" onkeydown="if(event.key==='Enter') handleManualScanSubmit()">
         <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-500">
@@ -1026,9 +1026,7 @@
       isLoggedIn = false;
       localStorage.removeItem('wms_mobile_logged_in');
       document.getElementById('login-pin-input').value = '';
-      if (html5QrCode && cameraInitialized) {
-        try { html5QrCode.stop(); } catch(e) {}
-      }
+      stopCameraScanner();
       document.getElementById('view-login').classList.remove('hidden');
     }
 
@@ -1040,11 +1038,12 @@
     }
 
     // ================= CAMERA SCANNER ENGINE WITH AUTO & MANUAL ZOOM =================
-    let currentZoom = 1.0;
+    let currentZoom = 0.7;
     let cameraTrack = null;
+    let isStartingCamera = false;
 
     function setCameraZoom(level) {
-      currentZoom = Number(level) || 1.0;
+      currentZoom = Number(level) || 0.7;
       
       // Update UI active zoom buttons
       ['0.7x', '1x', '1.5x', '2x'].forEach(z => {
@@ -1055,9 +1054,9 @@
                           (z === '1.5x' && currentZoom > 1.2 && currentZoom <= 1.7) ||
                           (z === '2x' && currentZoom > 1.7);
           if (isMatch) {
-            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-indigo-600 text-white shadow';
+            btn.className = 'px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-indigo-600 text-white shadow';
           } else {
-            btn.className = 'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-slate-300 hover:text-white';
+            btn.className = 'px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-bold text-slate-300 hover:text-white';
           }
         }
       });
@@ -1067,7 +1066,7 @@
         try {
           const caps = cameraTrack.getCapabilities();
           if (caps.zoom) {
-            const minZ = caps.zoom.min || 1;
+            const minZ = caps.zoom.min || 0.7;
             const maxZ = caps.zoom.max || 10;
             const targetZoom = Math.min(Math.max(currentZoom, minZ), maxZ);
             cameraTrack.applyConstraints({
@@ -1088,26 +1087,44 @@
     window.setCameraZoom = setCameraZoom;
 
     function startCameraScanner() {
-      if (!cameraInitialized) {
-        initHtml5Qrcode();
+      if (isStartingCamera || cameraInitialized) return;
+      initHtml5Qrcode();
+    }
+
+    async function stopCameraScanner() {
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (e) {
+          console.warn('Camera stop error:', e);
+        } finally {
+          cameraInitialized = false;
+          cameraTrack = null;
+          torchTrack = null;
+          isTorchOn = false;
+          isStartingCamera = false;
+        }
       }
     }
 
     function initHtml5Qrcode() {
       document.getElementById('camera-permission-btn').classList.add('hidden');
+      isStartingCamera = true;
       
       if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
       }
 
       const config = {
-        fps: 25,
+        fps: 12, // Optimal 12 FPS: sangat cepat baca barcode, hemat CPU & baterai, mencegah HP panas
         qrbox: function(viewfinderWidth, viewfinderHeight) {
-          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-          const size = Math.floor(minDim * 0.85);
-          return { width: size, height: size };
+          const w = Math.floor(viewfinderWidth * 0.88);
+          const h = Math.floor(viewfinderHeight * 0.75);
+          return { width: Math.max(w, 200), height: Math.max(h, 150) };
         },
-        aspectRatio: 1.0, // 1:1 Aspect ratio square (kotak presisi)
+        aspectRatio: 1.333333, // 4:3 Aspect ratio
         formatsToSupport: [
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.CODE_128,
@@ -1124,9 +1141,9 @@
         },
         videoConstraints: {
           facingMode: { ideal: cameraFacing },
-          width: { ideal: 1080 },
-          height: { ideal: 1080 },
-          aspectRatio: { ideal: 1.0 }
+          width: { ideal: 800, min: 640 },
+          height: { ideal: 600, min: 480 },
+          aspectRatio: { ideal: 1.333333 }
         }
       };
 
@@ -1137,6 +1154,7 @@
         onBarcodeScanError
       ).then(() => {
         cameraInitialized = true;
+        isStartingCamera = false;
         try {
           const videoElem = document.querySelector('#reader video');
           if (videoElem && videoElem.srcObject) {
@@ -1150,10 +1168,12 @@
               track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             }
 
-            setCameraZoom(1.0);
+            // Default zoom 0.7x (Lebar / Ultra Wide)
+            setCameraZoom(0.7);
           }
         } catch (e) {}
       }).catch(err => {
+        isStartingCamera = false;
         console.warn('Camera start error:', err);
         document.getElementById('camera-permission-btn').classList.remove('hidden');
         document.getElementById('camera-badge-text').innerText = 'Kamera offline';
@@ -1195,10 +1215,10 @@
       lastScannedTime = now;
       scanAttemptCount = 0;
 
-      // Reset zoom ke 1x setelah scan berhasil
+      // Reset zoom ke default 0.7x jika autoZoom sempat berubah
       if (autoZoomTimer) clearTimeout(autoZoomTimer);
       autoZoomTimer = setTimeout(() => {
-        if (currentZoom > 1) setCameraZoom(1.0);
+        if (currentZoom > 1.2) setCameraZoom(0.7);
       }, 1500);
 
       handleBarcodeReceived(decodedText.trim());
@@ -1206,12 +1226,25 @@
 
     function onBarcodeScanError(err) {
       scanAttemptCount++;
-      if (scanAttemptCount === 45 && currentZoom < 1.5) {
+      if (scanAttemptCount === 45 && currentZoom < 1.0) {
+        setCameraZoom(1.0);
+      } else if (scanAttemptCount === 90 && currentZoom < 1.5) {
         setCameraZoom(1.5);
-      } else if (scanAttemptCount === 90 && currentZoom < 2.0) {
-        setCameraZoom(2.0);
       }
     }
+
+    // Auto-pause kamera saat aplikasi di background / layar mati agar tidak boros baterai dan tidak panas
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (currentMode !== 'dashboard') {
+          stopCameraScanner();
+        }
+      } else {
+        if (currentMode !== 'dashboard' && isLoggedIn) {
+          startCameraScanner();
+        }
+      }
+    });
 
     function handleManualScanSubmit() {
       const input = document.getElementById('manual-barcode-input');
@@ -1329,6 +1362,19 @@
       const container = document.getElementById('picking-item-list');
       
       if (!activeBatch || items.length === 0) {
+        if (pickingBatches.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-10 text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800/80 p-5 space-y-2.5">
+              <div class="w-12 h-12 mx-auto rounded-full bg-slate-800/80 flex items-center justify-center text-slate-400">
+                <span class="material-symbols-outlined text-2xl">inbox</span>
+              </div>
+              <div class="font-bold text-slate-200 text-sm">Tidak Ada Tugas Picking</div>
+              <div class="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">Belum ada pesanan yang ditugaskan ke akun Anda. Tunggu Admin di Web App mengalokasikan pesanan lewat menu <b>Atur & Kirim Picking</b>.</div>
+            </div>`;
+          updatePickingProgress(0, 0);
+          return;
+        }
+
         container.innerHTML = `
           <div class="text-center py-8 text-slate-500 text-xs bg-slate-900/50 rounded-2xl border border-slate-800 p-4 space-y-2">
             <span class="material-symbols-outlined text-4xl block text-indigo-400">task_alt</span>
@@ -2051,6 +2097,7 @@
         if (headerBackBtn) headerBackBtn.classList.add('hidden');
         cameraWrapper.classList.add('hidden');
         bottomBar.classList.add('hidden');
+        stopCameraScanner(); // Matikan kamera di background agar hemat baterai & HP dingin
         loadDashboardData();
       } else {
         if (headerBackBtn) headerBackBtn.classList.remove('hidden');
