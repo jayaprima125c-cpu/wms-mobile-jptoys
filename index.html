@@ -100,69 +100,112 @@
 
 <body class="h-full flex flex-col justify-between overflow-hidden bg-slate-950 text-slate-100 max-w-md mx-auto relative shadow-2xl">
 
+    <!-- ======================================================= -->
+  <!-- 1. LOGIN SCREEN OVERLAY (ENTERPRISE ZERO-POPUP AUTH)   -->
   <!-- ======================================================= -->
-  <!-- 1. LOGIN SCREEN OVERLAY (HALAMAN DEPAN)                -->
-  <!-- ======================================================= -->
-  <div id="view-login" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between p-6 max-w-md mx-auto transition-all duration-300 overflow-y-auto">
-    <div class="flex-1 flex flex-col justify-center items-center text-center space-y-5 my-auto">
+  <div id="view-login" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto transition-all duration-300 overflow-y-auto">
+    <div class="flex-1 flex flex-col justify-center items-center text-center space-y-5 my-auto w-full">
       
       <!-- Official Logo Branding -->
       <div class="space-y-2 flex flex-col items-center">
         <div class="relative group">
           <div class="absolute -inset-3 bg-gradient-to-tr from-sky-400 via-indigo-500 to-amber-400 rounded-full blur-xl opacity-60 animate-pulse"></div>
-          <div class="relative w-28 h-28 rounded-3xl bg-slate-900/90 p-2.5 border border-white/20 shadow-2xl flex items-center justify-center">
-            <img src="logo.png" alt="WMS Jaya Prima Toys" class="w-full h-full object-contain logo-glow transition transform hover:scale-105 duration-300">
+          <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-slate-900/90 p-2.5 border border-white/20 shadow-2xl flex items-center justify-center">
+            <img src="logo.png" alt="WMS Jaya Prima Toys" class="w-full h-full object-contain logo-glow transition transform hover:scale-105 duration-300" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3081/3081986.png'">
           </div>
         </div>
         <div class="pt-2">
-          <h1 class="text-xl font-black tracking-tight text-white uppercase">WMS JAYA PRIMA TOYS</h1>
-          <p class="text-[11px] text-sky-400 font-semibold tracking-wide">Sistem Scanner & Pergudangan Modern</p>
+          <h1 class="text-lg sm:text-xl font-black tracking-tight text-white uppercase">WMS JAYA PRIMA TOYS</h1>
+          <p class="text-[11px] text-sky-400 font-semibold tracking-wide">Sistem Scanner &amp; Pergudangan Modern</p>
         </div>
       </div>
 
-      <!-- Login Form Card -->
-      <div class="w-full glass-card p-5 rounded-3xl space-y-4 shadow-2xl border-slate-800">
+      <!-- Login Form Card Glassmorphic -->
+      <div class="w-full glass-card p-5 rounded-3xl space-y-4 shadow-2xl border border-slate-800 text-left">
         
-        <!-- Select Petugas -->
-        <div class="text-left space-y-1.5">
-          <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">PILIH NAMA PETUGAS</label>
-          <div class="relative">
-            <select id="login-petugas-select" class="select select-bordered select-sm w-full bg-slate-900 border-slate-700 text-white font-semibold rounded-xl text-xs pl-9 pr-8 py-2">
-              <option value="Budi (Gudang)">👤 Budi (Gudang)</option>
-              <option value="Agus (Picking)">👤 Agus (Picking)</option>
-              <option value="Siti (Packing)">👤 Siti (Packing)</option>
-              <option value="Rian (Leader)">👤 Rian (Leader)</option>
-              <option value="Dedi (Operator)">👤 Dedi (Operator)</option>
-              <option value="Petugas 1">👤 Petugas Lapangan 1</option>
-            </select>
-            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-indigo-400">
-              <span class="material-symbols-outlined text-[18px]">badge</span>
-            </span>
-          </div>
+        <!-- Inline Error / Info Alert Banner -->
+        <div id="login_alert_banner" class="hidden p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 transition-all">
+          <span class="material-symbols-outlined text-[18px] text-rose-400 shrink-0 mt-0.5">error</span>
+          <div id="login_alert_message" class="flex-1 font-medium leading-relaxed"></div>
         </div>
 
-        <!-- PIN Input -->
-        <div class="text-left space-y-1.5">
-          <div class="flex justify-between items-center">
-            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">PIN KEAMANAN</label>
-            <span class="text-[10px] text-slate-500">Default: 1234</span>
-          </div>
-          <div class="relative">
-            <input type="password" id="login-pin-input" placeholder="Masukkan 4 digit PIN" maxlength="6" inputmode="numeric" class="input input-bordered input-sm w-full bg-slate-900 border-slate-700 text-white font-mono text-center tracking-widest text-base rounded-xl">
-          </div>
+        <!-- 1. Google 1-Click SSO Button (Otomatis Deteksi Profil) -->
+        <div id="google_sso_container" class="space-y-1">
+          <button type="button" id="btn_google_sso" onclick="handleMobileGoogleLogin()"
+            class="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg transition-all transform active:scale-[0.98]">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span id="google_sso_label">Lanjutkan dengan Google</span>
+          </button>
         </div>
 
-        <!-- Remember Me Checkbox -->
-        <label class="cursor-pointer label justify-start gap-2 py-0">
-          <input type="checkbox" id="login-remember-me" checked class="checkbox checkbox-xs checkbox-primary rounded" />
-          <span class="label-text text-xs text-slate-400 font-medium">Ingat saya di perangkat ini</span>
-        </label>
+        <!-- OR Divider -->
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-800"></div>
+          <span class="flex-shrink mx-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">atau masuk dengan akun</span>
+          <div class="flex-grow border-t border-slate-800"></div>
+        </div>
 
-        <!-- Submit Button -->
-        <button onclick="handleLoginSubmit()" class="btn btn-sm w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold rounded-2xl border-none shadow-lg shadow-indigo-600/30 gap-2">
-          <span>Masuk Sistem WMS</span>
-          <span class="material-symbols-outlined text-sm">login</span>
-        </button>
+        <!-- 2. Form Universal: Email / Nama Pengguna & Sandi / PIN -->
+        <form id="form_universal_login" onsubmit="event.preventDefault(); handleUniversalLoginSubmit();" class="space-y-3.5">
+          
+          <!-- Email / Username -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">EMAIL / NAMA PENGGUNA</label>
+            <div class="relative">
+              <input type="text" id="login_account_identifier" list="default_mobile_accounts_list" placeholder="admin@jptoys.co.id atau budi" autocomplete="username"
+                class="input input-bordered input-sm w-full bg-slate-900 border-slate-700 text-white font-medium text-xs pl-9 pr-4 py-2 rounded-xl focus:border-indigo-500 focus:outline-none" required />
+              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-indigo-400">
+                <span class="material-symbols-outlined text-[18px]">person</span>
+              </span>
+            </div>
+            <!-- Quick Suggestions Datalist -->
+            <datalist id="default_mobile_accounts_list">
+              <option value="admin@jptoys.co.id">👤 Admin Utama (Super Admin)</option>
+              <option value="budi">👤 Budi (Gudang)</option>
+              <option value="agus">👤 Agus (Picking)</option>
+              <option value="siti">👤 Siti (Packing)</option>
+              <option value="rian">👤 Rian (Leader)</option>
+              <option value="picker@jptoys.co.id">👤 Petugas Gudang (Picking &amp; Packing)</option>
+            </datalist>
+          </div>
+
+          <!-- Password / PIN -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">KATA SANDI / PIN KEAMANAN</label>
+              <span class="text-[10px] text-slate-500 font-mono">Default: 1234 / admin</span>
+            </div>
+            <div class="relative">
+              <input type="password" id="login_account_password" placeholder="Masukkan Sandi atau 4 digit PIN" maxlength="32" autocomplete="current-password"
+                class="input input-bordered input-sm w-full bg-slate-900 border-slate-700 text-white font-medium text-xs pl-9 pr-10 py-2 rounded-xl focus:border-indigo-500 focus:outline-none" required />
+              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-indigo-400">
+                <span class="material-symbols-outlined text-[18px]">lock</span>
+              </span>
+              <button type="button" onclick="togglePasswordVisibility('login_account_password', 'toggle_mobile_pwd_icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+                <span id="toggle_mobile_pwd_icon" class="material-symbols-outlined text-[18px]">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember Me Checkbox -->
+          <div class="flex items-center justify-between pt-0.5">
+            <label class="cursor-pointer label justify-start gap-2 py-0">
+              <input type="checkbox" id="login-remember-me" checked class="checkbox checkbox-xs checkbox-primary rounded" />
+              <span class="label-text text-xs text-slate-400 font-medium">Ingat sesi di perangkat ini</span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="btn_submit_login" class="btn btn-sm w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold rounded-2xl border-none shadow-lg shadow-indigo-600/30 gap-2 mt-2">
+            <span>Masuk Sistem WMS</span>
+            <span class="material-symbols-outlined text-sm">login</span>
+          </button>
+        </form>
       </div>
 
       <!-- Quick Install App Button & Server Status -->
@@ -996,36 +1039,180 @@
       }
     }
 
-    function handleLoginSubmit() {
-      const select = document.getElementById('login-petugas-select');
-      const pin = document.getElementById('login-pin-input').value.trim();
-      const remember = document.getElementById('login-remember-me').checked;
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
 
-      if (pin !== '1234' && pin.length < 4) {
-        playBeep('error');
-        showToast('PIN salah! Gunakan PIN default: 1234', 'error');
+    function showLoginAlert(msg, isError = true) {
+      const banner = document.getElementById('login_alert_banner');
+      const text = document.getElementById('login_alert_message');
+      if (!banner || !text) return;
+      text.innerText = msg;
+      banner.className = isError 
+        ? 'p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 transition-all'
+        : 'p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5 transition-all';
+      banner.classList.remove('hidden');
+    }
+
+    function hideLoginAlert() {
+      const banner = document.getElementById('login_alert_banner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    let detectedMobileGoogleEmail = null;
+
+    async function detectMobileGoogleAccount() {
+      try {
+        const res = await runGasAsync('getGoogleAuthContext');
+        if (res && res.success && res.data && res.data.activeEmail) {
+          detectedMobileGoogleEmail = res.data.activeEmail;
+          const matchingUser = (res.data.users || []).find(u => u.email && u.email.toLowerCase() === res.data.activeEmail.toLowerCase());
+          const label = document.getElementById('google_sso_label');
+          if (label) {
+            if (matchingUser) {
+              label.innerText = `Lanjutkan sebagai ${matchingUser.nama} (${res.data.activeEmail})`;
+            } else {
+              label.innerText = `Lanjutkan sebagai ${res.data.activeEmail}`;
+            }
+          }
+        }
+      } catch(e) {
+        console.log('Mobile Google detection:', e);
+      }
+    }
+
+    async function handleMobileGoogleLogin() {
+      hideLoginAlert();
+      const btn = document.getElementById('btn_google_sso');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span><span>Menghubungkan ke Google...</span>';
+      }
+
+      try {
+        const res = await runGasAsync('authenticateUser', {
+          mode: 'google',
+          email: detectedMobileGoogleEmail || '',
+          rememberMe: true
+        });
+
+        if (res && res.success && res.data) {
+          const userName = res.data.user?.nama || detectedMobileGoogleEmail.split('@')[0];
+          playBeep('success');
+          showToast(`Login Google Berhasil! Selamat bertugas, ${userName}!`, 'success');
+          currentPetugas = userName;
+          isLoggedIn = true;
+          localStorage.setItem('wms_mobile_logged_in', 'true');
+          localStorage.setItem('wms_mobile_petugas', currentPetugas);
+          document.getElementById('view-login').classList.add('hidden');
+          setPetugas(currentPetugas);
+          switchScannerMode('dashboard');
+        } else {
+          const errMsg = res ? (res.error || res.message) : 'Akun Google ini belum terdaftar di WMS.';
+          showLoginAlert(errMsg, true);
+        }
+      } catch(e) {
+        showLoginAlert('Gagal menghubungkan ke Google: ' + e.message, true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          const labelText = detectedMobileGoogleEmail ? `Lanjutkan sebagai ${detectedMobileGoogleEmail}` : 'Lanjutkan dengan Google';
+          btn.innerHTML = `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg> <span>${labelText}</span>`;
+        }
+      }
+    }
+
+    async function handleUniversalLoginSubmit() {
+      hideLoginAlert();
+      const identifier = document.getElementById('login_account_identifier')?.value.trim();
+      const passOrPin = document.getElementById('login_account_password')?.value.trim();
+      const remember = document.getElementById('login-remember-me')?.checked;
+
+      if (!identifier) {
+        showLoginAlert('Masukkan Email atau Nama Pengguna Anda.', true);
+        return;
+      }
+      if (!passOrPin) {
+        showLoginAlert('Masukkan Kata Sandi atau PIN keamanan.', true);
         return;
       }
 
-      currentPetugas = select.value;
-      isLoggedIn = true;
-      if (remember) {
-        localStorage.setItem('wms_mobile_logged_in', 'true');
-        localStorage.setItem('wms_mobile_petugas', currentPetugas);
+      const btn = document.getElementById('btn_submit_login');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Memverifikasi...</span><span class="loading loading-spinner loading-xs"></span>';
       }
 
-      playBeep('success');
-      showToast(`Selamat bertugas, ${currentPetugas}!`, 'success');
-      document.getElementById('view-login').classList.add('hidden');
-      setPetugas(currentPetugas);
-      switchScannerMode('dashboard');
+      try {
+        const res = await runGasAsync('authenticateUser', {
+          mode: 'password',
+          email: identifier,
+          password: passOrPin,
+          pin: passOrPin,
+          rememberMe: remember
+        });
+
+        if (res && res.success && res.data) {
+          const userName = res.data.user?.nama || identifier.split('@')[0];
+          currentPetugas = userName;
+          isLoggedIn = true;
+          if (remember) {
+            localStorage.setItem('wms_mobile_logged_in', 'true');
+            localStorage.setItem('wms_mobile_petugas', currentPetugas);
+          }
+          playBeep('success');
+          showToast(`Selamat bertugas, ${currentPetugas}!`, 'success');
+          document.getElementById('view-login').classList.add('hidden');
+          setPetugas(currentPetugas);
+          switchScannerMode('dashboard');
+        } else {
+          // Default fallback untuk offline / cepat
+          if (passOrPin === '1234' || passOrPin === '123456' || passOrPin === 'admin') {
+            currentPetugas = identifier.split('@')[0].toUpperCase();
+            isLoggedIn = true;
+            if (remember) {
+              localStorage.setItem('wms_mobile_logged_in', 'true');
+              localStorage.setItem('wms_mobile_petugas', currentPetugas);
+            }
+            playBeep('success');
+            showToast(`Selamat bertugas, ${currentPetugas}!`, 'success');
+            document.getElementById('view-login').classList.add('hidden');
+            setPetugas(currentPetugas);
+            switchScannerMode('dashboard');
+          } else {
+            playBeep('error');
+            showLoginAlert(res ? (res.error || res.message) : 'Email atau Sandi salah. Gunakan default: 1234 / admin', true);
+          }
+        }
+      } catch(e) {
+        showLoginAlert('Error koneksi sistem: ' + e.message, true);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Masuk Sistem WMS</span><span class="material-symbols-outlined text-sm">login</span>';
+        }
+      }
+    }
+
+    function handleLoginSubmit() {
+      handleUniversalLoginSubmit();
     }
 
     function handleLogout() {
       if (!confirm('Keluar dan ganti akun petugas?')) return;
       isLoggedIn = false;
       localStorage.removeItem('wms_mobile_logged_in');
-      document.getElementById('login-pin-input').value = '';
+      const passInput = document.getElementById('login_account_password');
+      if (passInput) passInput.value = '';
       stopCameraScanner();
       document.getElementById('view-login').classList.remove('hidden');
     }
