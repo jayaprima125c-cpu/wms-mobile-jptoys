@@ -706,9 +706,10 @@
           </div>
           <div class="space-y-1">
             <label class="text-[10px] font-bold text-emerald-400">STOK FISIK AKTUAL</label>
-            <input type="number" id="opname-qty-input" value="0" min="0" class="input input-sm w-full bg-slate-900 border-emerald-500/40 text-emerald-300 font-mono text-center font-bold text-sm rounded-xl">
+            <input type="number" id="opname-qty-input" value="0" min="0" class="input input-sm w-full bg-slate-900 border-emerald-500/40 text-emerald-300 font-mono text-center font-bold text-sm rounded-xl" oninput="checkOpnameDifference()">
           </div>
         </div>
+        <div id="opname-diff-pill" class="hidden text-[10px] font-mono font-bold px-2 py-1 rounded-xl text-center transition-all"></div>
 
         <div class="space-y-1">
           <label class="text-[11px] font-bold text-slate-300">CATATAN / KONDISI</label>
@@ -1077,6 +1078,69 @@
           playBeep('order_cancelled');
         }
       } catch(e) {}
+    }
+
+    // ================= PWA SYSTEM NOTIFICATION & PERMISSION CONTROLLER =================
+    async function requestMobileNotificationPermission() {
+      if ('Notification' in window) {
+        try {
+          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            const perm = await Notification.requestPermission();
+            if (perm === 'granted') {
+              playBeep('success');
+              showToast('✅ Notifikasi layar HP aktif!', 'success');
+            }
+          }
+        } catch(e) {}
+      }
+    }
+
+    function sendMobileSystemNotification(title, options = {}) {
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const opt = {
+            icon: 'logo.png',
+            badge: 'logo.png',
+            vibrate: [200, 100, 200],
+            tag: 'wms-mobile-alert',
+            renotify: true,
+            ...options
+          };
+          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(reg => reg.showNotification(title, opt));
+          } else {
+            new Notification(title, opt);
+          }
+        }
+      } catch (e) {
+        console.warn('System notification notice:', e);
+      }
+    }
+
+    function checkOpnameDifference() {
+      const sysInput = document.getElementById('opname-system-qty');
+      const fisInput = document.getElementById('opname-qty-input');
+      const pill = document.getElementById('opname-diff-pill');
+      if (!pill || !sysInput || !fisInput) return;
+      
+      const sysVal = parseInt(sysInput.value);
+      const fisVal = parseInt(fisInput.value);
+      if (isNaN(sysVal) || isNaN(fisVal)) {
+        pill.classList.add('hidden');
+        return;
+      }
+      const diff = fisVal - sysVal;
+      pill.classList.remove('hidden');
+      if (diff === 0) {
+        pill.className = 'text-[10px] font-mono font-bold px-2 py-1 rounded-xl text-center bg-emerald-950/80 border border-emerald-500/40 text-emerald-300';
+        pill.innerText = '✅ Stok Fisik Sesuai Sistem (Selisih 0 Pcs)';
+      } else if (diff > 0) {
+        pill.className = 'text-[10px] font-mono font-bold px-2 py-1 rounded-xl text-center bg-blue-950/80 border border-blue-500/40 text-blue-300';
+        pill.innerText = `➕ Selisih Lebih: +${diff} Pcs (Fisik Lebih Banyak)`;
+      } else {
+        pill.className = 'text-[10px] font-mono font-bold px-2 py-1 rounded-xl text-center bg-rose-950/80 border border-rose-500/40 text-rose-300';
+        pill.innerText = `⚠️ Selisih Kurang: ${diff} Pcs (Fisik Kurang)`;
+      }
     }
 
     // ================= REST API CALLER (CONNECTED DIRECTLY TO REAL GAS DATABASE) =================
@@ -1630,6 +1694,9 @@
       } catch (e) {}
     }
 
+    let _prevMobileNewOrders = null;
+    let _prevMobilePickingPending = null;
+
     async function loadDashboardData(isManual = false) {
       const refreshIcon = document.getElementById('dash-refresh-icon');
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
@@ -1653,6 +1720,25 @@
           // Sisa Produk & SKU
           if (document.getElementById('dash-stat-total-sku')) document.getElementById('dash-stat-total-sku').innerText = `${res.stats.totalProduk || 0} SKU`;
           if (document.getElementById('dash-stat-total-stok')) document.getElementById('dash-stat-total-stok').innerText = `${(res.stats.totalSisaStok || 0).toLocaleString('id-ID')} Pcs Fisik`;
+
+          // Cek penambahan pesanan baru secara realtime
+          if (_prevMobileNewOrders !== null && res.stats.newOrders > _prevMobileNewOrders) {
+            const diffOrders = res.stats.newOrders - _prevMobileNewOrders;
+            playBeep('order_new');
+            showToast(`🔔 ${diffOrders} Pesanan Baru Masuk dari Shopee!`, 'success');
+            sendMobileSystemNotification('🔔 Pesanan Baru Masuk!', { body: `Ada ${diffOrders} pesanan baru masuk siap diproses.` });
+          }
+
+          // Cek penambahan tugas picking baru
+          if (_prevMobilePickingPending !== null && (res.stats.pickingPending || 0) > _prevMobilePickingPending) {
+            const diffPick = (res.stats.pickingPending || 0) - _prevMobilePickingPending;
+            playBeep('order_instant');
+            showToast(`📦 Ada ${diffPick} Tugas Picking Baru untuk Anda!`, 'info');
+            sendMobileSystemNotification('📦 Tugas Picking Baru!', { body: `Ada ${diffPick} batch picking baru dialokasikan.` });
+          }
+
+          _prevMobileNewOrders = res.stats.newOrders || 0;
+          _prevMobilePickingPending = res.stats.pickingPending || 0;
 
           if (isManual) {
             playBeep('scan_success');
@@ -1873,6 +1959,15 @@
         showToast('Memuat data pesanan resi...', 'info');
         const res = await runGasAsync('getOrderForPacking', { keyword: clean });
         if (res.success && res.order) {
+          const oStatus = String(res.order.status || '').toUpperCase();
+          if (oStatus.includes('CANCEL') || oStatus.includes('BATAL') || oStatus.includes('RETURN') || oStatus.includes('RETUR')) {
+            playBeep('order_cancelled');
+            showToast(`⛔ PESANAN DIBATALKAN (${res.order.orderSn})! JANGAN DIKIRIM!`, 'error');
+            sendMobileSystemNotification('⛔ PESANAN DIBATALKAN!', { body: `Pesanan ${res.order.orderSn} telah dibatalkan oleh pembeli.` });
+            alert(`⛔ PERHATIAN GUDANG:\n\nPesanan: ${res.order.orderSn}\nStatus: ${res.order.status}\n\nPembeli telah membatalkan pesanan ini di marketplace. Mohon kembalikan barang ke rak dan JANGAN serahkan ke kurir!`);
+            currentPackingOrder = null;
+            return;
+          }
           currentPackingOrder = res.order;
           playBeep('scan_success');
           renderPackingOrderView();
@@ -2712,6 +2807,11 @@
       startClock();
       checkAuthStatus();
       try { updateMobileSoundToggleUI(); } catch(e) {}
+
+      // Minta izin notifikasi HP saat user pertama kali berinteraksi
+      document.body.addEventListener('click', () => {
+        requestMobileNotificationPermission();
+      }, { once: true });
 
       // Auto-refresh data dashboard berkala setiap 20 detik saat di tab Home
       setInterval(() => {
