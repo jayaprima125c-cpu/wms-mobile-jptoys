@@ -241,6 +241,9 @@
 
     <!-- Quick Action / Status -->
     <div class="flex items-center gap-1.5">
+      <button id="btn-mobile-sound-toggle" onclick="toggleMobileSoundMute()" title="Suara Notifikasi: Aktif" class="btn btn-ghost btn-xs btn-circle text-emerald-400 hover:bg-emerald-950/40">
+        <span id="icon-mobile-sound" class="material-symbols-outlined text-[18px]">volume_up</span>
+      </button>
       <button onclick="openSettingsModal()" title="Pengaturan Server API" class="btn btn-ghost btn-xs btn-circle text-slate-400 hover:text-white">
         <span class="material-symbols-outlined text-[18px]">settings</span>
       </button>
@@ -577,9 +580,11 @@
         <div class="space-y-1">
           <label class="text-[11px] font-bold text-slate-300">2. BARCODE / SKU PRODUK</label>
           <div class="relative">
-            <input type="text" id="transfer-sku-input" placeholder="Scan Barcode SKU Produk..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs pl-8">
+            <input type="text" id="transfer-sku-input" placeholder="Scan Barcode SKU Produk..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs pl-8" onchange="lookupTransferProduct(this.value)" onkeydown="if(event.key==='Enter') lookupTransferProduct(this.value)">
             <span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-500 text-sm">barcode</span>
           </div>
+          <!-- Preview Produk yang akan ditransfer -->
+          <div id="transfer-product-preview" class="hidden"></div>
         </div>
 
         <!-- 3. Jumlah Qty -->
@@ -689,7 +694,9 @@
 
         <div class="space-y-1">
           <label class="text-[11px] font-bold text-slate-300">2. BARCODE / SKU PRODUK</label>
-          <input type="text" id="opname-sku-input" placeholder="Scan Barcode Produk..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs">
+          <input type="text" id="opname-sku-input" placeholder="Scan Barcode Produk..." class="input input-sm w-full bg-slate-900 border-slate-700 text-white font-mono rounded-xl text-xs" onchange="lookupOpnameProduct(this.value)" onkeydown="if(event.key==='Enter') lookupOpnameProduct(this.value)">
+          <!-- Preview Produk yang sedang di-opname -->
+          <div id="opname-product-preview" class="hidden"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -749,17 +756,49 @@
     <div class="modal-box bg-slate-900 border border-slate-800 text-white rounded-t-3xl sm:rounded-3xl p-5 max-w-md space-y-3">
       <h3 class="font-extrabold text-sm text-white flex items-center gap-2">
         <span class="material-symbols-outlined text-indigo-400">settings</span>
-        <span>PENGATURAN SERVER API</span>
+        <span>PENGATURAN SERVER & SUARA NOTIFIKASI</span>
       </h3>
       <div class="space-y-1.5">
         <label class="text-[11px] font-bold text-slate-300">URL WEB APP GOOGLE APPS SCRIPT</label>
-        <textarea id="settings-gas-url" rows="3" placeholder="https://script.google.com/macros/s/AKfy.../exec" class="textarea textarea-bordered textarea-xs w-full bg-slate-950 border-slate-700 text-slate-200 font-mono text-[11px] rounded-xl"></textarea>
-        <p class="text-[10px] text-slate-400">Paste URL hasil Deploy Web App Google Apps Script Anda di sini.</p>
+        <textarea id="settings-gas-url" rows="2" placeholder="https://script.google.com/macros/s/AKfy.../exec" class="textarea textarea-bordered textarea-xs w-full bg-slate-950 border-slate-700 text-slate-200 font-mono text-[11px] rounded-xl"></textarea>
       </div>
-      <div class="flex items-center gap-2 pt-2">
+      <div class="flex items-center gap-2">
         <button onclick="testApiConnection()" class="btn btn-xs btn-neutral flex-1 rounded-xl">Test Ping</button>
         <button onclick="saveApiUrlSettings()" class="btn btn-xs btn-primary flex-1 rounded-xl">Simpan URL</button>
       </div>
+
+      <!-- Test Sound Section -->
+      <div class="pt-2 border-t border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-emerald-400 text-sm">volume_up</span> Uji Suara Notifikasi
+          </span>
+          <button onclick="toggleMobileSoundMute()" class="btn btn-xs btn-ghost text-slate-400 text-[10px] h-6 min-h-0">
+            Mute/Unmute
+          </button>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 text-[10px]">
+          <button onclick="playBeep('order_instant')" class="btn btn-xs bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>🚨 Instant</span>
+          </button>
+          <button onclick="playBeep('order_new')" class="btn btn-xs bg-blue-950/60 hover:bg-blue-900 border border-blue-800/80 text-blue-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>🔔 Order Baru</span>
+          </button>
+          <button onclick="playBeep('success')" class="btn btn-xs bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>✅ Scan OK</span>
+          </button>
+          <button onclick="playBeep('error')" class="btn btn-xs bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 text-rose-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>❌ Scan Salah</span>
+          </button>
+          <button onclick="playBeep('packing_complete')" class="btn btn-xs bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800/80 text-indigo-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>🎉 Selesai Pack</span>
+          </button>
+          <button onclick="playBeep('order_cancelled')" class="btn btn-xs bg-amber-950/60 hover:bg-amber-900 border border-amber-800/80 text-amber-300 rounded-lg py-1 h-auto flex flex-col items-center">
+            <span>⚠️ Batal/Alert</span>
+          </button>
+        </div>
+      </div>
+
       <div class="modal-action mt-1">
         <form method="dialog" class="w-full">
           <button class="btn btn-xs btn-ghost w-full rounded-xl text-slate-400">Tutup</button>
@@ -851,8 +890,42 @@
     let currentPickingBatchId = '';
     let currentPackingOrder = null;
 
-    // ================= AUDIO & HAPTIC SYNTHESIZER (COMPREHENSIVE WMS SOUND SYSTEM) =================
-    function playBeep(type = 'success') {
+    // ================= SOUND & AUDIO NOTIFICATION ENGINE (WEB AUDIO API) =================
+    let isMobileSoundMuted = false;
+    try {
+      isMobileSoundMuted = (localStorage.getItem('wms_mobile_sound_muted') === 'true');
+    } catch(e) {}
+
+    function updateMobileSoundToggleUI() {
+      const btn = document.getElementById('btn-mobile-sound-toggle');
+      const icon = document.getElementById('icon-mobile-sound');
+      if (icon) {
+        icon.textContent = isMobileSoundMuted ? 'volume_off' : 'volume_up';
+        icon.className = isMobileSoundMuted 
+          ? 'material-symbols-outlined text-[18px] text-slate-500' 
+          : 'material-symbols-outlined text-[18px] text-emerald-400';
+      }
+      if (btn) {
+        btn.title = isMobileSoundMuted ? 'Suara Notifikasi: Nonaktif (Klik untuk aktifkan)' : 'Suara Notifikasi: Aktif (Klik untuk matikan)';
+      }
+    }
+
+    function toggleMobileSoundMute() {
+      isMobileSoundMuted = !isMobileSoundMuted;
+      try {
+        localStorage.setItem('wms_mobile_sound_muted', String(isMobileSoundMuted));
+      } catch(e) {}
+      updateMobileSoundToggleUI();
+      if (!isMobileSoundMuted) {
+        playBeep('success');
+        showToast('Suara notifikasi diaktifkan 🔔', 'info');
+      } else {
+        showToast('Suara notifikasi dibisukan 🔕', 'info');
+      }
+    }
+
+    function playBeep(type) {
+      if (isMobileSoundMuted) return;
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
@@ -871,10 +944,37 @@
         }
 
         switch (type) {
+          case 'order_instant':
+          case 'order_priority': // 🚨 Pesanan Kilat Instant / Sameday Masuk (Ting-Ting Cepat Dobel)
+            tone(1047, 0.08, 'sine', 0.35, 0);     // C6
+            tone(1319, 0.08, 'sine', 0.35, 0.08);  // E6
+            tone(1568, 0.12, 'sine', 0.4, 0.16);   // G6
+            tone(2093, 0.22, 'sine', 0.45, 0.26);  // C7
+            tone(1319, 0.08, 'sine', 0.3, 0.55);
+            tone(1568, 0.08, 'sine', 0.35, 0.63);
+            tone(2093, 0.25, 'sine', 0.45, 0.71);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+            break;
+
+          case 'order_new':
+          case 'order_regular': // 🔔 Pesanan Baru Standar / Reguler Masuk (Chime Ceria)
+            tone(659, 0.1, 'sine', 0.3, 0);       // E5
+            tone(880, 0.12, 'sine', 0.3, 0.1);    // A5
+            tone(1319, 0.25, 'sine', 0.35, 0.22); // E6
+            if (navigator.vibrate) navigator.vibrate(80);
+            break;
+
+          case 'order_cancelled': // ⚠️ Pesanan Batal / Peringatan
+            tone(600, 0.12, 'triangle', 0.3, 0);
+            tone(450, 0.15, 'triangle', 0.3, 0.14);
+            tone(300, 0.25, 'triangle', 0.35, 0.3);
+            if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
+            break;
+
           case 'success': // Scan berhasil — bip naik pendek
           case 'scan_success':
-            tone(880, 0.06, 'sine', 0.3, 0);
-            tone(1320, 0.08, 'sine', 0.25, 0.06);
+            tone(988, 0.06, 'sine', 0.3, 0);       // B5
+            tone(1319, 0.09, 'sine', 0.25, 0.06);  // E6
             if (navigator.vibrate) navigator.vibrate(80);
             break;
 
@@ -899,11 +999,12 @@
             if (navigator.vibrate) navigator.vibrate([80, 50, 80, 50, 150]);
             break;
 
+          case 'pack_complete':
           case 'packing_complete': // Paket selesai packing — fanfare + vibrate panjang
-            tone(659, 0.1, 'sine', 0.3, 0);      // E5
+            tone(587, 0.1, 'sine', 0.3, 0);      // D5
             tone(784, 0.1, 'sine', 0.28, 0.1);   // G5
-            tone(988, 0.1, 'sine', 0.25, 0.2);   // B5
-            tone(1319, 0.25, 'sine', 0.22, 0.3);  // E6
+            tone(988, 0.12, 'sine', 0.25, 0.2);  // B5
+            tone(1175, 0.3, 'sine', 0.35, 0.32); // D6
             if (navigator.vibrate) navigator.vibrate([60, 40, 60, 40, 200]);
             break;
 
@@ -920,9 +1021,16 @@
             if (navigator.vibrate) navigator.vibrate(40);
             break;
 
+          case 'low_stock': // 📉 Stok Menipis
+            tone(880, 0.08, 'sine', 0.2, 0);
+            tone(659, 0.18, 'sine', 0.25, 0.09);
+            break;
+
           case 'error': // Error / barcode tidak cocok
-            tone(220, 0.25, 'sawtooth', 0.35, 0);
-            if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+          case 'scan_error':
+            tone(250, 0.15, 'sawtooth', 0.35, 0);
+            tone(200, 0.2, 'sawtooth', 0.35, 0.16);
+            if (navigator.vibrate) navigator.vibrate([150, 80, 150]);
             break;
 
           case 'warning': // Peringatan / input kosong
@@ -958,6 +1066,17 @@
         pill.classList.add('opacity-0', 'translate-y-[-10px]');
         setTimeout(() => pill.remove(), 250);
       }, 3200);
+
+      try {
+        const lower = String(message || '').toLowerCase();
+        if (lower.includes('instant') || lower.includes('sameday') || lower.includes('kilat')) {
+          playBeep('order_instant');
+        } else if (lower.includes('pesanan') && (lower.includes('masuk') || lower.includes('berhasil'))) {
+          playBeep('order_new');
+        } else if (type === 'error' || lower.includes('gagal') || lower.includes('batal')) {
+          playBeep('order_cancelled');
+        }
+      } catch(e) {}
     }
 
     // ================= REST API CALLER (CONNECTED DIRECTLY TO REAL GAS DATABASE) =================
@@ -1014,9 +1133,84 @@
       return { success: false, error: 'Failed to fetch', message: 'Gagal terhubung ke server database Google Sheets.' };
     }
 
-    // ================= AUTH / LOGIN CONTROLLER =================
+    // ================= AUTH / LOGIN CONTROLLER (6-JAM PERSISTENT SESI) =================
+    const MOBILE_SESSION_KEY = 'wms_mobile_auth_session';
+    const SESSION_TIMEOUT_MS = 6 * 60 * 60 * 1000; // 6 Jam
+    let _mobileActivityTrackerBound = false;
+    let _mobileLastActivityUpdate = 0;
+    let _mobileIdleInterval = null;
+
+    function updateMobileActivity() {
+      const now = Date.now();
+      if (now - _mobileLastActivityUpdate < 30000) return;
+      _mobileLastActivityUpdate = now;
+
+      try {
+        const sessionRaw = localStorage.getItem(MOBILE_SESSION_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          session.last_activity = now;
+          localStorage.setItem(MOBILE_SESSION_KEY, JSON.stringify(session));
+        }
+      } catch(e) {}
+    }
+
+    function startMobileActivityTracker() {
+      if (!_mobileActivityTrackerBound) {
+        _mobileActivityTrackerBound = true;
+        const handler = () => updateMobileActivity();
+        ['touchstart', 'mousedown', 'keydown', 'scroll', 'click'].forEach(evt => {
+          window.addEventListener(evt, handler, { passive: true });
+        });
+      }
+
+      if (_mobileIdleInterval) clearInterval(_mobileIdleInterval);
+      _mobileIdleInterval = setInterval(() => {
+        try {
+          const sessionRaw = localStorage.getItem(MOBILE_SESSION_KEY);
+          if (sessionRaw) {
+            const session = JSON.parse(sessionRaw);
+            const now = Date.now();
+            const lastActive = session.last_activity || session.login_time || 0;
+            if (now - lastActive >= SESSION_TIMEOUT_MS) {
+              handleLogout(true); // Auto-logout karena 6 jam inaktif
+            }
+          }
+        } catch(e) {}
+      }, 60000);
+    }
+
     function checkAuthStatus() {
       const loginView = document.getElementById('view-login');
+      
+      // 1. Cek sesi lokal tersimpan
+      try {
+        const sessionRaw = localStorage.getItem(MOBILE_SESSION_KEY);
+        if (sessionRaw) {
+          const session = JSON.parse(sessionRaw);
+          const now = Date.now();
+          const lastActive = session.last_activity || session.login_time || 0;
+          const idleTime = now - lastActive;
+
+          if (session.user && idleTime < SESSION_TIMEOUT_MS) {
+            isLoggedIn = true;
+            currentPetugas = session.user.nama || session.user.email || 'PETUGAS';
+            loginView.classList.add('hidden');
+            setPetugas(currentPetugas);
+            updateMobileActivity();
+            startMobileActivityTracker();
+            renderCachedDashboardStats();
+            loadDashboardData();
+            return;
+          } else {
+            localStorage.removeItem(MOBILE_SESSION_KEY);
+            loginView.classList.remove('hidden');
+            showLoginAlert('Sesi login Anda telah berakhir karena tidak ada aktivitas selama 6 jam. Silakan masuk kembali.', true);
+            return;
+          }
+        }
+      } catch(e) {}
+
       if (isLoggedIn) {
         loginView.classList.add('hidden');
         setPetugas(currentPetugas);
@@ -1092,6 +1286,18 @@
           const userName = res.data.user?.nama || identifier.split('@')[0];
           currentPetugas = userName;
           isLoggedIn = true;
+
+          // Simpan sesi ke localStorage
+          try {
+            const now = Date.now();
+            localStorage.setItem(MOBILE_SESSION_KEY, JSON.stringify({
+              user: res.data.user || { nama: currentPetugas },
+              login_time: now,
+              last_activity: now
+            }));
+          } catch(e) {}
+
+          startMobileActivityTracker();
           playBeep('success');
           showToast(`Selamat bertugas, ${currentPetugas}!`, 'success');
           document.getElementById('view-login').classList.add('hidden');
@@ -1102,6 +1308,17 @@
           if ((password === 'admin' || password === '1234' || password === '123456') && (pin === '1234' || pin === '123456' || pin === '112233' || pin === '445566')) {
             currentPetugas = identifier.split('@')[0].toUpperCase();
             isLoggedIn = true;
+
+            try {
+              const now = Date.now();
+              localStorage.setItem(MOBILE_SESSION_KEY, JSON.stringify({
+                user: { nama: currentPetugas, email: identifier },
+                login_time: now,
+                last_activity: now
+              }));
+            } catch(e) {}
+
+            startMobileActivityTracker();
             playBeep('success');
             showToast(`Selamat bertugas, ${currentPetugas}!`, 'success');
             document.getElementById('view-login').classList.add('hidden');
@@ -1126,15 +1343,33 @@
       handleStrictMobileLogin();
     }
 
-    function handleLogout() {
-      if (!confirm('Keluar dan ganti akun petugas?')) return;
+    function handleLogout(isAuto = false) {
+      if (!isAuto) {
+        if (!confirm('Keluar dan ganti akun petugas?')) return;
+      }
+      
+      try {
+        localStorage.removeItem(MOBILE_SESSION_KEY);
+      } catch(e) {}
+
+      if (_mobileIdleInterval) {
+        clearInterval(_mobileIdleInterval);
+        _mobileIdleInterval = null;
+      }
+
       isLoggedIn = false;
       const passInput = document.getElementById('login_account_password');
       const pinInput = document.getElementById('login_account_pin');
       if (passInput) passInput.value = '';
       if (pinInput) pinInput.value = '';
       stopCameraScanner();
-      document.getElementById('view-login').classList.remove('hidden');
+      
+      const loginView = document.getElementById('view-login');
+      if (loginView) loginView.classList.remove('hidden');
+      
+      if (isAuto) {
+        showLoginAlert('Sesi login Anda telah berakhir karena tidak ada aktivitas selama 6 jam. Silakan masuk kembali.', true);
+      }
     }
 
     function setPetugas(name) {
@@ -1738,6 +1973,50 @@
     }
 
     // ================= CONTROLLER: TRANSFER =================
+    async function lookupTransferProduct(skuKw) {
+      skuKw = String(skuKw || '').trim();
+      const prev = document.getElementById('transfer-product-preview');
+      if (!prev) return;
+      if (!skuKw) {
+        prev.classList.add('hidden');
+        prev.innerHTML = '';
+        return;
+      }
+      prev.classList.remove('hidden');
+      prev.innerHTML = `<div class="p-2 text-center text-slate-400 text-xs font-mono">Mencari info produk...</div>`;
+      try {
+        const res = await runGasAsync('getProductLocations', { keyword: skuKw, sku: skuKw });
+        if (res && res.success && res.results && res.results.length > 0) {
+          const p = res.results[0];
+          const safeImg = encodeURIComponent(p.image || '');
+          const safeName = encodeURIComponent(p.name || '');
+          const safeSku = encodeURIComponent(p.sku || '');
+          const safeRak = encodeURIComponent(p.rak || 'DEFAULT');
+          const safeVar = encodeURIComponent(p.variation || '-');
+
+          prev.innerHTML = `
+            <div class="mt-1.5 p-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 flex items-center gap-2.5 shadow-lg">
+              <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 shrink-0 overflow-hidden flex items-center justify-center cursor-pointer relative" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                ${p.image ? `<img src="${p.image}" alt="${p.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.parentElement.innerHTML='<span class=\\'material-symbols-outlined text-slate-500 text-xl\\'>image_not_supported</span>'">` : `<span class="material-symbols-outlined text-slate-500 text-xl">inventory_2</span>`}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-xs text-white leading-tight line-clamp-1">${p.name}</div>
+                <div class="text-[10px] text-slate-400 font-mono">${p.sku} • Var: ${p.variation}</div>
+                <div class="text-[10px] text-cyan-400 font-bold">Rak Asal Sistem: ${p.rak} • Sisa: ${p.stock} Pcs</div>
+              </div>
+            </div>
+          `;
+          if (!document.getElementById('transfer-source-rak').value && p.rak && p.rak !== 'DEFAULT' && p.rak !== 'BELUM DIATUR') {
+            document.getElementById('transfer-source-rak').value = p.rak.split(/[,;\/]+/)[0].trim();
+          }
+        } else {
+          prev.innerHTML = `<div class="mt-1.5 p-2 rounded-xl bg-rose-950/40 border border-rose-800/60 text-[11px] text-rose-300">Produk "${skuKw}" tidak ditemukan di database.</div>`;
+        }
+      } catch(e) {
+        prev.classList.add('hidden');
+      }
+    }
+
     function processTransferScan(barcode) {
       const clean = barcode.trim().toUpperCase();
       const srcInput = document.getElementById('transfer-source-rak');
@@ -1752,6 +2031,7 @@
         skuInput.value = clean;
         playBeep('success');
         showToast(`SKU Produk: ${clean}`, 'info');
+        lookupTransferProduct(clean);
       } else if (!tgtInput.value) {
         tgtInput.value = clean;
         playBeep('success');
@@ -2017,6 +2297,52 @@
     }
 
     // ================= CONTROLLER: OPNAME =================
+    async function lookupOpnameProduct(skuKw) {
+      skuKw = String(skuKw || '').trim();
+      const prev = document.getElementById('opname-product-preview');
+      if (!prev) return;
+      if (!skuKw) {
+        prev.classList.add('hidden');
+        prev.innerHTML = '';
+        return;
+      }
+      prev.classList.remove('hidden');
+      prev.innerHTML = `<div class="p-2 text-center text-slate-400 text-xs font-mono">Mencari info produk...</div>`;
+      try {
+        const res = await runGasAsync('getProductLocations', { keyword: skuKw, sku: skuKw });
+        if (res && res.success && res.results && res.results.length > 0) {
+          const p = res.results[0];
+          const safeImg = encodeURIComponent(p.image || '');
+          const safeName = encodeURIComponent(p.name || '');
+          const safeSku = encodeURIComponent(p.sku || '');
+          const safeRak = encodeURIComponent(p.rak || 'DEFAULT');
+          const safeVar = encodeURIComponent(p.variation || '-');
+
+          prev.innerHTML = `
+            <div class="mt-1.5 p-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 flex items-center gap-2.5 shadow-lg">
+              <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 shrink-0 overflow-hidden flex items-center justify-center cursor-pointer relative" onclick="openImagePreview('${safeImg}', '${safeName}', '${safeSku}', '${safeRak}', '${safeVar}')">
+                ${p.image ? `<img src="${p.image}" alt="${p.sku}" class="w-full h-full object-cover rounded-xl" onerror="this.parentElement.innerHTML='<span class=\\'material-symbols-outlined text-slate-500 text-xl\\'>image_not_supported</span>'">` : `<span class="material-symbols-outlined text-slate-500 text-xl">inventory_2</span>`}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-xs text-white leading-tight line-clamp-1">${p.name}</div>
+                <div class="text-[10px] text-slate-400 font-mono">${p.sku} • Var: ${p.variation}</div>
+                <div class="text-[10px] text-rose-400 font-bold">Rak: ${p.rak} • Stok Sistem: ${p.stock} Pcs</div>
+              </div>
+            </div>
+          `;
+          const sysInput = document.getElementById('opname-system-qty');
+          if (sysInput) sysInput.value = `${p.stock} Pcs`;
+          if (!document.getElementById('opname-rak-input').value && p.rak && p.rak !== 'DEFAULT') {
+            document.getElementById('opname-rak-input').value = p.rak.split(/[,;\/]+/)[0].trim();
+          }
+        } else {
+          prev.innerHTML = `<div class="mt-1.5 p-2 rounded-xl bg-rose-950/40 border border-rose-800/60 text-[11px] text-rose-300">Produk "${skuKw}" tidak ditemukan di database.</div>`;
+        }
+      } catch(e) {
+        prev.classList.add('hidden');
+      }
+    }
+
     async function processOpnameScan(barcode) {
       const clean = barcode.trim().toUpperCase();
       const rakInput = document.getElementById('opname-rak-input');
@@ -2027,34 +2353,14 @@
         playBeep('scan_success');
         showToast(`Rak Opname: ${clean}`, 'info');
         if (skuInput.value) {
-          await fetchOpnameSystemStock(skuInput.value, clean);
+          lookupOpnameProduct(skuInput.value);
         }
       } else {
         skuInput.value = clean;
         playBeep('scan_success');
         showToast(`SKU Opname: ${clean}`, 'success');
-        await fetchOpnameSystemStock(clean, rakInput.value);
+        lookupOpnameProduct(clean);
         document.getElementById('opname-qty-input').focus();
-      }
-    }
-
-    async function fetchOpnameSystemStock(sku, rak) {
-      const sysInput = document.getElementById('opname-system-qty');
-      if (!sysInput) return;
-      sysInput.value = 'Mencari...';
-
-      try {
-        const res = await runGasAsync('getProductStockForOpname', { sku: sku, rak: rak });
-        if (res && res.success) {
-          sysInput.value = `${res.stock} Pcs`;
-          if (res.rak && !document.getElementById('opname-rak-input').value) {
-            document.getElementById('opname-rak-input').value = res.rak;
-          }
-        } else {
-          sysInput.value = '0 Pcs';
-        }
-      } catch (e) {
-        sysInput.value = '0 Pcs';
       }
     }
 
@@ -2405,6 +2711,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       startClock();
       checkAuthStatus();
+      try { updateMobileSoundToggleUI(); } catch(e) {}
 
       // Auto-refresh data dashboard berkala setiap 20 detik saat di tab Home
       setInterval(() => {
