@@ -273,6 +273,10 @@
         <span class="material-symbols-outlined text-[14px]">inventory_2</span>
         <span>Packing</span>
       </button>
+      <button id="tab-putaway" onclick="switchScannerMode('putaway')" class="btn btn-xs rounded-xl border border-slate-800 bg-slate-900/60 text-slate-300 gap-1">
+        <span class="material-symbols-outlined text-[14px]">shelves</span>
+        <span>Putaway</span>
+      </button>
       <button id="tab-transfer" onclick="switchScannerMode('transfer')" class="btn btn-xs rounded-xl border border-slate-800 bg-slate-900/60 text-slate-300 gap-1">
         <span class="material-symbols-outlined text-[14px]">move_up</span>
         <span>Transfer</span>
@@ -490,6 +494,17 @@
             <span class="text-[10px] text-slate-400 font-normal">Scan Rak / SKU / Sisa Stok</span>
           </button>
 
+          <button onclick="switchScannerMode('putaway')" class="btn btn-sm h-auto py-2.5 bg-slate-900 hover:bg-slate-800 border border-teal-500/30 rounded-2xl flex flex-col items-start text-left gap-0.5 col-span-2">
+            <div class="flex items-center justify-between w-full">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-400 text-xl">shelves</span>
+                <span class="text-xs font-bold text-white">Penempatan Barang ke Rak (Putaway)</span>
+              </div>
+              <span id="dash-stat-putaway-badge" class="badge badge-xs bg-teal-500/20 text-teal-300 border-teal-500/40">Inbound / Retur</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-normal">Scan SKU barang masuk dari PO Pembelian & Retur Shopee ke Rak</span>
+          </button>
+
           <button onclick="switchScannerMode('opname')" class="btn btn-sm h-auto py-2.5 bg-slate-900 hover:bg-slate-800 border-slate-800 rounded-2xl flex flex-col items-start text-left gap-0.5 col-span-2">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-rose-400 text-xl">fact_check</span>
@@ -498,6 +513,75 @@
             <span class="text-[10px] text-slate-400 font-normal">Scan barcode rak & sesuaikan jumlah fisik riil</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------- -->
+    <!-- TAB PUTAWAY: PENEMPATAN BARANG KE RAK (INBOUND)      -->
+    <!-- ---------------------------------------------------- -->
+    <div id="view-putaway" class="hidden space-y-2.5">
+      <div class="glass-card p-3 rounded-2xl border border-teal-500/30 bg-gradient-to-r from-teal-950/40 via-slate-900 to-slate-950">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-teal-400 text-xl">shelves</span>
+            <div>
+              <h3 class="text-xs font-extrabold text-white">Penempatan Barang (Putaway)</h3>
+              <p class="text-[10px] text-slate-400">Posisikan barang masuk (PO & Retur) ke Rak</p>
+            </div>
+          </div>
+          <button onclick="loadPutawayData(true)" class="btn btn-ghost btn-xs text-teal-400 gap-1 px-1.5 py-0.5 h-auto rounded-lg">
+            <span id="putaway-refresh-icon" class="material-symbols-outlined text-[14px]">refresh</span>
+            <span class="text-[10px]">Segarkan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Filter / Scan Barcode -->
+      <div class="glass-card p-2 rounded-2xl border border-slate-800/80 flex items-center gap-2">
+        <span class="material-symbols-outlined text-teal-400 text-base">barcode_scanner</span>
+        <input type="text" id="putaway-search-input" onkeyup="filterPutawayList()" placeholder="Scan Barcode / Ketik SKU..." class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full font-mono">
+        <button onclick="clearPutawaySearch()" id="btn-clear-putaway-search" class="hidden btn btn-ghost btn-xs text-slate-400 p-0 h-auto">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+
+      <!-- Detail Active Putaway Task (Saat item di-scan / di-klik) -->
+      <div id="putaway-active-box" class="hidden glass-card p-3 rounded-2xl border border-teal-500/50 bg-teal-950/20 space-y-2">
+        <div class="flex items-start justify-between">
+          <div>
+            <span id="putaway-active-sumber" class="badge badge-xs bg-teal-500/20 text-teal-300 font-bold border-teal-500/40">PO Masuk</span>
+            <h4 id="putaway-active-sku" class="text-xs font-black text-white font-mono mt-0.5">SKU-EXAMPLE</h4>
+            <p id="putaway-active-nama" class="text-[11px] text-slate-300 line-clamp-1">Nama Produk Contoh</p>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400">Qty Masuk</span>
+            <div id="putaway-active-qty" class="text-sm font-black text-emerald-400 font-mono">10 Pcs</div>
+          </div>
+        </div>
+
+        <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Rekomendasi Rak Master:</span>
+            <span id="putaway-active-rak-rekomendasi" class="font-bold text-teal-300 font-mono">Rak A-1-01</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-[11px] text-slate-400 shrink-0">Rak Tujuan:</label>
+            <input type="text" id="putaway-active-rak-input" placeholder="Scan Barcode Rak / Ketik..." class="bg-slate-900 border border-slate-700 text-white font-mono font-bold text-xs rounded-lg px-2 py-1 w-full uppercase focus:border-teal-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button onclick="batalPutawayActive()" class="btn btn-xs btn-ghost text-slate-400 hover:text-white flex-1 rounded-xl">Batal</button>
+          <button onclick="konfirmasiSimpanPutaway()" class="btn btn-xs bg-teal-600 hover:bg-teal-500 text-white border-none flex-1 rounded-xl font-bold flex items-center justify-center gap-1 shadow-lg shadow-teal-600/30">
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            <span>Simpan ke Rak</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Putaway Tasks List -->
+      <div id="putaway-tasks-container" class="space-y-2">
+        <div class="text-center py-6 text-slate-500 text-xs">Memuat antrean barang masuk...</div>
       </div>
     </div>
 
@@ -1496,7 +1580,38 @@
       initHtml5Qrcode();
     }
 
+    let _cameraSleepTimer = null;
+    function resetCameraSleepTimer() {
+      if (_cameraSleepTimer) clearTimeout(_cameraSleepTimer);
+      // Auto standby kamera setelah 40 detik tidak memindai barcode
+      if (currentMode !== 'dashboard' && cameraInitialized) {
+        _cameraSleepTimer = setTimeout(() => {
+          if (currentMode !== 'dashboard' && cameraInitialized) {
+            stopCameraScanner();
+            const badge = document.getElementById('camera-badge-text');
+            if (badge) badge.innerText = '💤 Kamera Standby (Sentuh untuk aktifkan)';
+            const btn = document.getElementById('camera-permission-btn');
+            if (btn) {
+              btn.classList.remove('hidden');
+              btn.innerText = 'Sentuh Layar untuk Aktifkan Kamera';
+            }
+          }
+        }, 40000);
+      }
+    }
+
     async function stopCameraScanner() {
+      if (_cameraSleepTimer) clearTimeout(_cameraSleepTimer);
+      if (cameraTrack) {
+        try { cameraTrack.stop(); } catch(e) {}
+      }
+      const videoElem = document.querySelector('#reader video');
+      if (videoElem && videoElem.srcObject) {
+        try {
+          const tracks = videoElem.srcObject.getTracks();
+          tracks.forEach(t => { try { t.stop(); } catch(e) {} });
+        } catch(e) {}
+      }
       if (html5QrCode) {
         try {
           if (html5QrCode.isScanning) {
@@ -1523,7 +1638,7 @@
       }
 
       const config = {
-        fps: 12, // Optimal 12 FPS: sangat cepat baca barcode, hemat CPU & baterai, mencegah HP panas
+        fps: 10, // Optimal 10 FPS: sangat cepat baca barcode, hemat baterai & CPU HP agar tidak panas
         qrbox: function(viewfinderWidth, viewfinderHeight) {
           const w = Math.floor(viewfinderWidth * 0.88);
           const h = Math.floor(viewfinderHeight * 0.75);
@@ -1662,6 +1777,7 @@
 
     function handleBarcodeReceived(barcode) {
       console.log(`[Scan] Mode: ${currentMode}, Code: ${barcode}`);
+      resetCameraSleepTimer();
       if (currentMode === 'picking') {
         processPickingScan(barcode);
       } else if (currentMode === 'packing') {
@@ -1672,6 +1788,8 @@
         processPosisiScan(barcode);
       } else if (currentMode === 'opname') {
         processOpnameScan(barcode);
+      } else if (currentMode === 'putaway') {
+        processPutawayScan(barcode);
       }
     }
 
@@ -2476,6 +2594,15 @@
           playBeep('batch_complete');
           showToast(res.message || 'Batch Picking Selesai!', 'success');
           
+          // Kirim log aktivitas scanner ke backend secara background
+          runGasAsync('logMobileWmsActivity', {
+            petugas: currentPetugas,
+            aksi: 'PICKING_COMPLETE',
+            skuOrOrder: currentPickingBatchId,
+            status: 'SUCCESS',
+            detail: `Batch picking ${currentPickingBatchId} (${items.length} item) diselesaikan via Scanner PWA`
+          }).catch(()=>{});
+
           // Auto-advance: hapus batch yang sudah selesai dan otomatis pilih batch berikutnya
           const completedBatchId = currentPickingBatchId;
           pickingBatches = pickingBatches.filter(b => b.batchId !== completedBatchId);
@@ -2508,6 +2635,16 @@
         const res = await runGasAsync('submitPackingVerification', { orderSn: currentPackingOrder.orderSn, petugas: currentPetugas, items: currentPackingOrder.items });
         if (res.success) {
           playBeep('packing_complete');
+          showToast(res.message || `Packing pesanan ${currentPackingOrder.orderSn} Selesai!`, 'success');
+
+          // Kirim log aktivitas scanner ke backend secara background
+          runGasAsync('logMobileWmsActivity', {
+            petugas: currentPetugas,
+            aksi: 'PACKING_COMPLETE',
+            skuOrOrder: currentPackingOrder.orderSn,
+            status: 'SUCCESS',
+            detail: `Verifikasi packing ${currentPackingOrder.orderSn} selesai via Scanner PWA`
+          }).catch(()=>{});
           showToast(res.message || 'Paket Selesai Dipacking!', 'success');
           currentPackingOrder = null;
           renderPackingOrderView();
@@ -2581,7 +2718,7 @@
         }
       }
       
-      ['dashboard', 'picking', 'packing', 'transfer', 'posisi', 'opname'].forEach(m => {
+      ['dashboard', 'picking', 'packing', 'transfer', 'posisi', 'opname', 'putaway'].forEach(m => {
         const tab = document.getElementById(`tab-${m}`);
         const view = document.getElementById(`view-${m}`);
         if (tab && view) {
@@ -2611,8 +2748,11 @@
         cameraWrapper.classList.remove('hidden');
         startCameraScanner();
 
-        if (mode === 'posisi') {
+        if (mode === 'posisi' || mode === 'putaway') {
           bottomBar.classList.add('hidden');
+          if (mode === 'putaway') {
+            loadPutawayData();
+          }
         } else {
           bottomBar.classList.remove('hidden');
           if (mode === 'picking') {
@@ -2749,6 +2889,233 @@
       }
     }
     window.openImagePreview = openImagePreview;
+
+
+    // ================= CONTROLLER: PENEMPATAN BARANG (PUTAWAY) =================
+    var _allPutawayTasks = [];
+    var _activePutawayTask = null;
+
+    async function loadPutawayData(isManual = false) {
+      const icon = document.getElementById('putaway-refresh-icon');
+      if (icon) icon.classList.add('animate-spin');
+      if (isManual) showToast('Memuat antrean barang masuk dari server...', 'info');
+
+      try {
+        const res = await runGasAsync('getPutawayTasks');
+        if (res && res.success) {
+          _allPutawayTasks = res.tasks || [];
+          renderPutawayTasks(_allPutawayTasks);
+          
+          const badge = document.getElementById('dash-stat-putaway-badge');
+          if (badge) {
+            badge.innerText = `${_allPutawayTasks.length} Barang`;
+          }
+
+          if (isManual) {
+            playBeep('scan_success');
+            showToast(`✅ Memuat ${_allPutawayTasks.length} antrean barang masuk.`, 'success');
+          }
+        } else {
+          // Fallback lokal jika backend belum ada task
+          if (_allPutawayTasks.length === 0) {
+            renderPutawayTasks([]);
+          }
+          if (isManual) showToast(res.message || 'Antrean barang masuk kosong.', 'info');
+        }
+      } catch (err) {
+        console.error('loadPutawayData error:', err);
+        if (isManual) showToast('Gagal memuat antrean penempatan barang.', 'error');
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderPutawayTasks(tasks) {
+      const container = document.getElementById('putaway-tasks-container');
+      if (!container) return;
+
+      if (!tasks || tasks.length === 0) {
+        container.innerHTML = `
+          <div class="glass-card p-6 rounded-2xl border border-slate-800 text-center space-y-2">
+            <span class="material-symbols-outlined text-teal-400 text-3xl">check_circle</span>
+            <div class="text-xs font-bold text-white">Semua Barang Sudah di Rak!</div>
+            <p class="text-[10px] text-slate-400">Tidak ada antrean barang masuk dari PO atau Retur yang belum ditempatkan.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      tasks.forEach((t, idx) => {
+        const isSelected = _activePutawayTask && _activePutawayTask.id === t.id;
+        const isRetur = String(t.sumber || '').includes('Retur');
+        const badgeBg = isRetur ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-teal-500/20 text-teal-300 border-teal-500/40';
+
+        html += `
+          <div onclick="selectPutawayTask('${t.id}')" class="glass-card p-3 rounded-2xl border ${isSelected ? 'border-teal-400 bg-teal-950/40 shadow-lg shadow-teal-950/50' : 'border-slate-800 hover:border-teal-500/40'} space-y-1.5 cursor-pointer transition-all">
+            <div class="flex items-center justify-between">
+              <span class="badge badge-xs ${badgeBg} font-bold">${t.sumber || 'Inbound PO'}</span>
+              <span class="text-[10px] font-mono text-slate-400">${t.noRef || '-'}</span>
+            </div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="text-xs font-black text-white font-mono">${t.sku}</div>
+                <div class="text-[11px] text-slate-300 line-clamp-1">${t.namaProduk || t.nama || t.sku}</div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-xs font-black text-emerald-400 font-mono">+${t.qty} Pcs</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px]">
+              <span class="text-slate-400">Rekomendasi: <b class="text-teal-300 font-mono">${t.rakRekomendasi || 'Rak A-1-01'}</b></span>
+              <span class="text-teal-400 font-bold flex items-center gap-0.5">
+                <span>Posisikan</span>
+                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function filterPutawayList() {
+      const q = (document.getElementById('putaway-search-input')?.value || '').toLowerCase().trim();
+      const clearBtn = document.getElementById('btn-clear-putaway-search');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !q);
+
+      if (!q) {
+        renderPutawayTasks(_allPutawayTasks);
+        return;
+      }
+      const filtered = _allPutawayTasks.filter(t => 
+        (t.sku && t.sku.toLowerCase().includes(q)) || 
+        (t.namaProduk && t.namaProduk.toLowerCase().includes(q)) ||
+        (t.noRef && t.noRef.toLowerCase().includes(q)) ||
+        (t.rakRekomendasi && t.rakRekomendasi.toLowerCase().includes(q))
+      );
+      renderPutawayTasks(filtered);
+    }
+
+    function clearPutawaySearch() {
+      const input = document.getElementById('putaway-search-input');
+      if (input) input.value = '';
+      filterPutawayList();
+    }
+
+    function selectPutawayTask(id) {
+      const task = _allPutawayTasks.find(t => t.id === id);
+      if (!task) return;
+      _activePutawayTask = task;
+      
+      const box = document.getElementById('putaway-active-box');
+      if (box) {
+        box.classList.remove('hidden');
+        document.getElementById('putaway-active-sumber').innerText = task.sumber || 'Inbound';
+        document.getElementById('putaway-active-sku').innerText = task.sku;
+        document.getElementById('putaway-active-nama').innerText = task.namaProduk || task.nama || task.sku;
+        document.getElementById('putaway-active-qty').innerText = `+${task.qty} Pcs`;
+        document.getElementById('putaway-active-rak-rekomendasi').innerText = task.rakRekomendasi || 'Rak A-1-01';
+        
+        const rakInput = document.getElementById('putaway-active-rak-input');
+        if (rakInput) {
+          rakInput.value = task.rakRekomendasi || 'Rak A-1-01';
+          rakInput.focus();
+        }
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      renderPutawayTasks(_allPutawayTasks);
+      playBeep('scan_success');
+    }
+
+    function batalPutawayActive() {
+      _activePutawayTask = null;
+      const box = document.getElementById('putaway-active-box');
+      if (box) box.classList.add('hidden');
+      renderPutawayTasks(_allPutawayTasks);
+    }
+
+    function processPutawayScan(barcode) {
+      const code = String(barcode || '').trim().toUpperCase();
+      if (!code) return;
+
+      // 1. Jika active task sudah terbuka dan barcode yang di-scan adalah format Rak
+      if (_activePutawayTask && (code.startsWith('RAK-') || code.startsWith('RAK') || code.startsWith('R-') || code.startsWith('AREA-'))) {
+        const rakInput = document.getElementById('putaway-active-rak-input');
+        if (rakInput) rakInput.value = code;
+        playBeep('scan_success');
+        showToast(`📍 Rak tujuan ${code} terpilih. Tekan Simpan untuk konfirmasi.`, 'success');
+        return;
+      }
+
+      // 2. Cari task putaway yang cocok dengan SKU / Barcode produk
+      const match = _allPutawayTasks.find(t => 
+        String(t.sku || '').toUpperCase() === code || 
+        String(t.barcode || '').toUpperCase() === code ||
+        code.includes(String(t.sku || '').toUpperCase())
+      );
+
+      if (match) {
+        selectPutawayTask(match.id);
+        showToast(`📦 Item ${match.sku} ditemukan (${match.qty} Pcs). Scan/pilih rak tujuan.`, 'info');
+      } else {
+        // Jika tidak ada di antrean putaway tapi ada di katalog master
+        playBeep('scan_error');
+        showToast(`SKU/Barcode ${code} tidak ada di antrean barang masuk.`, 'warning');
+      }
+    }
+
+    async function konfirmasiSimpanPutaway() {
+      if (!_activePutawayTask) {
+        showToast('Pilih item barang masuk terlebih dahulu.', 'warning');
+        return;
+      }
+
+      const rakTujuan = (document.getElementById('putaway-active-rak-input')?.value || '').trim().toUpperCase();
+      if (!rakTujuan) {
+        showToast('Masukkan atau scan rak tujuan penempatan barang.', 'warning');
+        return;
+      }
+
+      const task = _activePutawayTask;
+      showToast(`Menyimpan ${task.sku} ke ${rakTujuan}...`, 'info');
+
+      try {
+        const res = await runGasAsync('submitPutaway', {
+          sku: task.sku,
+          rakTujuan: rakTujuan,
+          qty: task.qty,
+          petugas: currentPetugas,
+          noRef: task.noRef,
+          sumber: task.sumber,
+          tambahStok: true
+        });
+
+        if (res && res.success) {
+          playBeep('scan_success');
+          showToast(`✅ Berhasil! ${task.qty} pcs ${task.sku} resmi tersimpan di ${rakTujuan}`, 'success');
+
+          // Log aktivitas secara background
+          runGasAsync('logMobileWmsActivity', {
+            petugas: currentPetugas,
+            aksi: 'PUTAWAY_CONFIRM',
+            skuOrOrder: task.sku,
+            status: 'SUCCESS',
+            detail: `Penempatan ${task.qty} pcs ${task.sku} ke ${rakTujuan} (Ref: ${task.noRef})`
+          });
+
+          // Hapus dari antrean lokal
+          _allPutawayTasks = _allPutawayTasks.filter(t => t.id !== task.id);
+          batalPutawayActive();
+        } else {
+          playBeep('scan_error');
+          showToast(res.message || 'Gagal menyimpan barang ke rak.', 'error');
+        }
+      } catch (err) {
+        console.error('konfirmasiSimpanPutaway error:', err);
+        showToast('Terjadi kesalahan koneksi saat simpan ke rak.', 'error');
+      }
+    }
 
     // ================= CLOCK & INITIALIZATION =================
     function startClock() {
